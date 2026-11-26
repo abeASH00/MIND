@@ -28,7 +28,7 @@ reminder app):
 | 16 bugs reproduced with `@known_bug` tests | done |
 | Codebase atlas `docs/other_docs/codebase_atlas.md` (+ mkdocs nav entry) | done |
 | Fix all 16 bugs (markers removed, regression tests added, 467 tests green on 3.8/3.11/3.13) | done |
-| Browser end-to-end tests (Playwright) | idea, not started |
+| Browser end-to-end tests: `tests/browser_e2e_test.py`, 32 tests (Playwright + Chromium, skipped if not installed) | done |
 
 Branch: `ccr-a5821806-a7lub3` (pushed to origin).
 
@@ -89,6 +89,15 @@ session: resume at 2026-11-28 03:30 UTC+8 and stop at 07:00 UTC+8.
 
 ### Next steps (for a future session)
 
-1. Optional: Playwright browser tests of the web UI (Chromium is
-   pre-installed in the cloud container).
-2. Optional: open a PR (only if the user asks).
+1. Optional: open a PR (only if the user asks). The branch has 4 commits:
+   tests → atlas/memory → fixes → browser tests.
+2. Optional ideas: CI workflow for this branch (the existing one only runs
+   on `Development`); run the browser tests in CI; look at the time model
+   (server TZ must equal browser TZ, atlas §7) — a real fix would mean
+   storing true UTC epochs, which needs a DB migration.
+
+### Notes for running the browser tests here
+
+- Python Playwright isn't pre-installed (only the Node one). I ran
+  `pip install playwright==1.63.0`; it finds the pre-installed Chromium
+  in `/opt/pw-browsers` by itself. Do NOT run `playwright install`.

@@ -324,8 +324,15 @@ mkdir -p db
 python3 -m unittest discover -s ./tests -p '*.py'
 ```
 
-The suite has about 470 tests, runs in about 30 seconds and passes on
-Python 3.8 to 3.13.
+The suite has about 500 tests, runs in about 30 seconds and passes on
+Python 3.8 to 3.13. With Playwright installed, 32 browser tests run as well
+(about one more minute):
+
+```bash
+pip install playwright && python3 -m playwright install chromium
+python3 -m unittest discover -s ./tests -p '*.py'
+# or skip them: MIND_SKIP_BROWSER_TESTS=1 python3 -m unittest ...
+```
 
 | File | What it covers |
 | ---- | -------------- |
@@ -341,6 +348,7 @@ Python 3.8 to 3.13.
 | `input_validation_test.py` | Every input variable, the API docs registry, request parsing. |
 | `api_endpoints_test.py` | Every endpoint end-to-end via Flask's test client. |
 | `frontend_static_test.py` | JS ↔ API consistency (endpoints, error names), templates. |
+| `browser_e2e_test.py` | The real web-UI in headless Chromium against MIND's waitress server (Playwright). Skipped without Playwright. |
 | `*_test.py` (older) | The original tests. |
 
 **`MindTestCase`** (in `_harness.py`) gives every test:

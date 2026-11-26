@@ -27,3 +27,5 @@ python3 -m unittest discover -s ./tests -p '*.py'
   the real `db/` folder or the PWA manifest.
 - `@known_bug('BUG-NN')` marks expected failures that reproduce documented
   bugs. When you fix one, remove its marker.
+- `tests/browser_e2e_test.py` drives the web-UI in Chromium via Playwright
+  (skipped when not installed, or with `MIND_SKIP_BROWSER_TESTS=1`).
