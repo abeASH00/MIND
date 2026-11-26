@@ -27,9 +27,9 @@ original chat (the "BUILD THIS APP ALL THE WAY TO DONE" brief).
 ## Progress (build order from the brief)
 - [x] Fonts bundled: fonts/ (Fraunces 600, DM Sans 400/500/700, OFL licences)
 - [x] css/app.css — full design system (light/dark, cards, nav, sheets, set rows, charts, calendar)
-- [ ] 1. index.html, manifest.json, icons/, sw.js, js/app.js (router, nav, theme)
+- [~] 1. DONE: index.html, manifest.json, icons/ (PIL), sw.js, _headers, js/ui.js. TODO: js/app.js (router, nav, theme, SW register, onboarding)
 - [x] 2. js/data.js — IndexedDB + backup export/import (done early; written before step 1)
-- [ ] 3. js/exercises.js — 30+ exercises, SVG figures, library + detail
+- [~] 3. DONE: js/exercise-data.js (46 exercises + warm-ups/cool-downs/rest-day ideas), js/figures.js (stick-figure poses). TODO: js/exercises.js views (library, filters, detail, favourites, notes, custom). Polish poses: one-arm row & hip thrust look off.
 - [ ] 4. js/plans.js — presets + builder
 - [ ] 5. js/workout.js — set logging, rest timer, resume
 - [ ] 6. js/suggest.js — weight suggestions
@@ -42,9 +42,12 @@ original chat (the "BUILD THIS APP ALL THE WAY TO DONE" brief).
 
 ## Planned file layout
 index.html, _headers (Netlify security headers), manifest.json, sw.js, css/app.css,
-js/{app,ui,data,stats,exercises,figures,plans,workout,suggest,progress,tools,settings,home}.js,
+js/{app,ui,data,stats,exercise-data,exercises,figures,plans,workout,suggest,progress,tools,settings,home}.js,
+(remember: add js/exercise-data.js to the FILES list in sw.js; bump VERSION when files change)
 icons/, fonts/
 
 ## Log
 - 2026-11-27 (chat 1): set up folder, fonts, CSS, data.js. Session restarted mid-build; paused at 7am MYT per user. Auto-resume scheduled 2026-11-28 03:30 MYT.
+- ui.js exports: esc, html`` (auto-escape tag), raw, safeUrl, linkify, $, $$, icon(name), toast, openSheet, confirmSheet, closeTopSheet, unit/toDisplay/fromDisplay/fmtW/fmtBig/fmtDur/fmtClock/dayKey/metaJoin, beep, buzz, unlockAudio, keepAwake, setupKeyboardHandling, downloadBlob, emptyState, avatarHTML, revealSelectedPills.
+- data.js exports: getSettings/saveSettings/settingsNow, getKV/setKV, saveActiveSync/getActive/clearActive, sessions/plans/custom/exmeta/body/measure/photos CRUD, exportBackup/importBackup/resetAll, requestPersist, uid.
 - NEXT: step 1 (index.html, manifest, icons via PIL, sw.js, app.js, ui.js), then 3 onward.
