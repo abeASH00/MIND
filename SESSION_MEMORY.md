@@ -31,7 +31,16 @@ reminder app):
 | Browser end-to-end tests: `tests/browser_e2e_test.py`, 32 tests (Playwright + Chromium, skipped if not installed) | done |
 | Live run of the real `MIND.py` (scratch copy): DB import keep + auto-revert, hosting-change auto-revert | done, found + fixed BUG-17 |
 
-Branch: `ccr-a5821806-a7lub3` (pushed to origin).
+Branch: `ccr-a5821806-a7lub3` (pushed to origin). Commits, oldest first:
+
+1. `f2af902` tests + harness + bug reproductions (455 tests)
+2. `e7ca00f` codebase atlas + this memory file + CLAUDE.md
+3. `480cd60` fixes for BUG-01..16
+4. `2bdffcf` browser end-to-end tests
+5. `c6ac817` fix for BUG-17 (restart crash) + `tests/server_test.py`
+
+Final count: **514 tests** (482 without Playwright), all green on Python
+3.8, 3.11 and 3.13. No PR opened (the user didn't ask for one).
 
 ### How to run the tests
 
