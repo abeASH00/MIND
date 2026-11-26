@@ -31,17 +31,22 @@ function makeCtx(params) {
     go(hash) { if (location.hash === hash) route(); else location.hash = hash; },
     refresh() { route(); },
     onLeave(fn) { cleanup.push(fn); },
+    // Listeners on the shared #view element must go through here so they're removed on leaving.
+    listen(type, fn) { view.addEventListener(type, fn); cleanup.push(() => view.removeEventListener(type, fn)); },
   };
 }
 
 const TAB_OF = { home: 'home', workout: 'workout', exercises: 'exercises', exercise: 'exercises', progress: 'progress', more: 'more', plans: 'more', plan: 'more', settings: 'more', tool: 'home' };
 
+let lastRoute = '';
 async function route() {
   cleanup.forEach((f) => { try { f(); } catch { /* ignore */ } });
   cleanup = [];
   while (closeTopSheet()) { /* close any open sheets when changing screen */ }
   const parts = (location.hash || '#/home').replace(/^#\/?/, '').split('/').map(decodeURIComponent);
   const name = parts[0] || 'home';
+  const same = lastRoute === location.hash;
+  lastRoute = location.hash;
   $$('#nav a').forEach((a) => a.classList.toggle('on', a.dataset.tab === (TAB_OF[name] || 'home')));
   $$('#nav a').forEach((a) => (a.dataset.tab === (TAB_OF[name] || 'home') ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
   const ctx = makeCtx(parts.slice(1));
@@ -63,7 +68,7 @@ async function route() {
     console.error(err);
     view.innerHTML = String(html`<div class="card"><h3>Something went wrong</h3><p class="small">${err && err.message ? err.message : 'Unknown error'}</p><p class="meta">Your data is safe. Try going back to Home.</p><a class="btn" href="#/home">Home</a></div>`);
   }
-  if (!ctx.keepScroll) window.scrollTo(0, 0);
+  if (!same) window.scrollTo(0, 0);
 }
 
 // First open: a short, calm safety and privacy note.

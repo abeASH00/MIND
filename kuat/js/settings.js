@@ -144,8 +144,8 @@ export async function renderSettings(ctx) {
     <div class="spacer"></div>
   `);
 
-  const save = async (patch, rerender = false) => { await Data.saveSettings(patch); if (rerender) renderSettings(ctx); };
-  ctx.view.addEventListener('change', async (e) => {
+  const save = async (patch, rerender = false) => { await Data.saveSettings(patch); if (rerender) ctx.refresh(); };
+  ctx.listen('change', async (e) => {
     const t = e.target;
     if (t.dataset.f) {
       const f = t.dataset.f, v = t.value.trim();
@@ -157,7 +157,7 @@ export async function renderSettings(ctx) {
       if (f === 'dbMin' || f === 'dbMax' || f === 'dbStep') {
         const cur = await Data.getSettings();
         const next = { dbMin: cur.dbMin, dbMax: cur.dbMax, dbStep: cur.dbStep, [f]: n };
-        if (!(next.dbMin > 0 && next.dbMax >= next.dbMin && next.dbStep > 0 && next.dbMax <= 200)) { toast('Those dumbbell numbers don’t add up — check lightest, heaviest and step.'); return renderSettings(ctx); }
+        if (!(next.dbMin > 0 && next.dbMax >= next.dbMin && next.dbStep > 0 && next.dbMax <= 200)) { toast('Those dumbbell numbers don’t add up — check lightest, heaviest and step.'); return ctx.refresh(); }
         return save(next, true);
       }
     }
@@ -173,7 +173,7 @@ export async function renderSettings(ctx) {
       return save({ [k]: t.checked });
     }
   });
-  ctx.view.addEventListener('click', async (e) => {
+  ctx.listen('click', async (e) => {
     const segBtn = e.target.closest('[data-seg] button');
     if (segBtn) {
       const key = segBtn.closest('[data-seg]').dataset.seg, v = segBtn.dataset.v;
@@ -184,7 +184,7 @@ export async function renderSettings(ctx) {
     if (g) return save({ goal: g.dataset.goal }, true);
   });
   ctx.on('back', () => ctx.go('#/more'));
-  ctx.on('export', async () => { await doExport(); renderSettings(ctx); });
+  ctx.on('export', async () => { await doExport(); ctx.refresh(); });
   ctx.on('import', () => doImport());
   ctx.on('photo', () => pickPhoto(async (url) => { await save({ photo: url }, true); }));
   ctx.on('photo-remove', () => save({ photo: '' }, true));

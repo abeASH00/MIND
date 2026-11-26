@@ -31,7 +31,7 @@ original chat (the "BUILD THIS APP ALL THE WAY TO DONE" brief).
 - [x] 2. js/data.js — IndexedDB + backup export/import (done early; written before step 1)
 - [~] 3. DONE: js/exercise-data.js (46 exercises + warm-ups/cool-downs/rest-day ideas), js/figures.js (stick-figure poses). DONE js/exercises.js (loadExercises, getExercise, allExercises, partName, isFav, renderLibrary(ctx), renderExercise(ctx,id), exercisePicker, searchExercises; custom exercises; favourites; notes). Polish poses: one-arm row & hip thrust look off.
 - [x] 4. js/plans.js — 5 presets (seeded to DB via ensurePresets), builder, reorder/swap/remove, day edit, reset preset. Exports: ensurePresets, activePlan, dayFor, upcoming, dayParts, renderPlans(ctx), renderPlan(ctx,id), searchPlans, PRESETS. Imports from exercises.js: getExercise, allExercises, exercisePicker({title, part, exclude, onPick}) — exercises.js MUST export these.
-- [ ] 5. js/workout.js — set logging, rest timer, resume
+- [x] 5. js/workout.js — written, NOT yet browser-tested: start screen, set rows w/ steppers, tick → rest (heavy/light), supersets, swap (offer to remember in plan), add/remove set/exercise, feel prompt, finish summary w/ PBs, resume via focusUid, wake lock. Re-exports restoreTimer/startRest from tools.js.
 - [x] 6. js/suggest.js — dumbbellSettings, nearestSetting, stepSetting, GOALS, repRange/repText/targetLow/targetHigh, lastPerformance(sessions,exId), suggestFor(ex,last,settings,target) -> {kg,reps,headline,why,ideas,atMax}, calcForTotal. Tested in node.
 - [~] 7. DONE js/stats.js (setVolume, sessionVolume, e1rm, weekKey, weekStreak, bestWeekStreak, weekRange, monthRange, totals, personalBests, newRecords, exerciseSeries, trainedDays; tested). DONE js/charts.js (lineChart(points,{unitKg,pbIndex,second,label}), barChart(bars,{format})). TODO js/progress.js screens.
 - [x] 8. js/tools.js — global rest timer bar (startRest, stopRest, restoreTimer; real-clock endAt in localStorage), renderTool(ctx,name) rest|interval|calc|warmup|cooldown. NOTE: app.js imports restoreTimer from workout.js → workout.js must re-export it from tools.js (or change app.js import).
@@ -40,8 +40,8 @@ original chat (the "BUILD THIS APP ALL THE WAY TO DONE" brief).
 - [ ] 11. final offline/empty-data/keyboard pass, then final report to user
       (file list, phone test checklist, deploy steps, security review)
 
-## Screen convention (app.js must provide this ctx)
-Every screen fn gets ctx = { mount(htmlRaw) -> sets #view innerHTML, on(act, fn(btnEl, event)) -> delegated click on [data-act], go(hash), refresh() }.
+## Screen convention (app.js provides this ctx)
+Every screen fn gets ctx = { view, params, mount(htmlRaw), on(act, fn(btnEl, event)) (delegated click on [data-act]; re-registering overwrites), go(hash), refresh() (re-renders; keeps scroll on same hash), onLeave(fn), listen(type, fn) — ALWAYS use ctx.listen for listeners on #view itself, never ctx.view.addEventListener (they'd pile up) }.
 Session record: {id, startedAt, endedAt, duration(sec), planId, dayName, exercises:[{exId, sets:[{w(kg per dumbbell), r}], feel:'easy'|'right'|'hard'|null}], totalKg, pbs:[]}.
 
 ## Planned file layout
@@ -57,6 +57,5 @@ icons/, fonts/
 - data.js exports: getSettings/saveSettings/settingsNow, getKV/setKV, saveActiveSync/getActive/clearActive, sessions/plans/custom/exmeta/body/measure/photos CRUD, exportBackup/importBackup/resetAll, requestPersist, uid.
 - NEXT (app won't load until these exist — app.js imports them):
   * (done) js/home.js — renderHome(ctx). Imports startWorkout(plan, day, ctx) from workout.js. Past-session search links to #/progress/day/YYYY-MM-DD (progress.js must handle tab 'day' + date param = ctx.params[1]).
-  * js/workout.js: renderWorkout(ctx), restoreTimer(), startRest(sec,label) + global timer bar in #timer-slot (real-clock endAt in localStorage), active workout engine (saveActiveSync on every input), supersets, feel prompt, swap/add/remove, finish screen (newRecords), wake lock.
   * js/progress.js: renderProgress(ctx, tab) — overview week/month, per-exercise charts, PB list, calendar, body weight, measurements, photos.
   * Then: add new files to sw.js FILES, test in Playwright (mobile viewport, offline), final report.
