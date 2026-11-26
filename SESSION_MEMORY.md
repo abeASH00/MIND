@@ -92,11 +92,11 @@ python3 -m unittest discover -s ./tests -p '*.py'
 - `pip install -r requirements.txt` needed `--ignore-installed blinker` in
   the cloud container (blinker was installed by Debian).
 
-### Scheduled check-ins (set up by the user's request)
+### Session end
 
-The user said: "If token full usage, continue back at 3:30am then stop at
-7am" (timezone UTC+8). Two one-shot scheduled messages fire into this
-session: resume at 2026-11-28 03:30 UTC+8 and stop at 07:00 UTC+8.
+The user asked to stop at 7am UTC+8 on 27 Nov (no more scheduled
+check-ins; the two that had been set up for 28 Nov were cancelled). Work
+stopped there with everything committed and pushed.
 
 ### Next steps (for a future session)
 
