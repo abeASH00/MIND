@@ -30,15 +30,19 @@ original chat (the "BUILD THIS APP ALL THE WAY TO DONE" brief).
 - [~] 1. DONE: index.html, manifest.json, icons/ (PIL), sw.js, _headers, js/ui.js. TODO: js/app.js (router, nav, theme, SW register, onboarding)
 - [x] 2. js/data.js — IndexedDB + backup export/import (done early; written before step 1)
 - [~] 3. DONE: js/exercise-data.js (46 exercises + warm-ups/cool-downs/rest-day ideas), js/figures.js (stick-figure poses). TODO: js/exercises.js views (library, filters, detail, favourites, notes, custom). Polish poses: one-arm row & hip thrust look off.
-- [ ] 4. js/plans.js — presets + builder
+- [x] 4. js/plans.js — 5 presets (seeded to DB via ensurePresets), builder, reorder/swap/remove, day edit, reset preset. Exports: ensurePresets, activePlan, dayFor, upcoming, dayParts, renderPlans(ctx), renderPlan(ctx,id), searchPlans, PRESETS. Imports from exercises.js: getExercise, allExercises, exercisePicker({title, part, exclude, onPick}) — exercises.js MUST export these.
 - [ ] 5. js/workout.js — set logging, rest timer, resume
-- [ ] 6. js/suggest.js — weight suggestions
-- [ ] 7. js/progress.js + js/stats.js
+- [x] 6. js/suggest.js — dumbbellSettings, nearestSetting, stepSetting, GOALS, repRange/repText/targetLow/targetHigh, lastPerformance(sessions,exId), suggestFor(ex,last,settings,target) -> {kg,reps,headline,why,ideas,atMax}, calcForTotal. Tested in node.
+- [~] 7. DONE js/stats.js (setVolume, sessionVolume, e1rm, weekKey, weekStreak, bestWeekStreak, weekRange, monthRange, totals, personalBests, newRecords, exerciseSeries, trainedDays; tested). TODO js/progress.js screens.
 - [ ] 8. js/tools.js — warm-up, cool-down, timers, calculator
 - [ ] 9. js/settings.js — settings + backup
 - [ ] 10. reminders
 - [ ] 11. final offline/empty-data/keyboard pass, then final report to user
       (file list, phone test checklist, deploy steps, security review)
+
+## Screen convention (app.js must provide this ctx)
+Every screen fn gets ctx = { mount(htmlRaw) -> sets #view innerHTML, on(act, fn(btnEl, event)) -> delegated click on [data-act], go(hash), refresh() }.
+Session record: {id, startedAt, endedAt, duration(sec), planId, dayName, exercises:[{exId, sets:[{w(kg per dumbbell), r}], feel:'easy'|'right'|'hard'|null}], totalKg, pbs:[]}.
 
 ## Planned file layout
 index.html, _headers (Netlify security headers), manifest.json, sw.js, css/app.css,
