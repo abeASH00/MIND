@@ -34,7 +34,7 @@ original chat (the "BUILD THIS APP ALL THE WAY TO DONE" brief).
 - [ ] 5. js/workout.js — set logging, rest timer, resume
 - [x] 6. js/suggest.js — dumbbellSettings, nearestSetting, stepSetting, GOALS, repRange/repText/targetLow/targetHigh, lastPerformance(sessions,exId), suggestFor(ex,last,settings,target) -> {kg,reps,headline,why,ideas,atMax}, calcForTotal. Tested in node.
 - [~] 7. DONE js/stats.js (setVolume, sessionVolume, e1rm, weekKey, weekStreak, bestWeekStreak, weekRange, monthRange, totals, personalBests, newRecords, exerciseSeries, trainedDays; tested). DONE js/charts.js (lineChart(points,{unitKg,pbIndex,second,label}), barChart(bars,{format})). TODO js/progress.js screens.
-- [ ] 8. js/tools.js — warm-up, cool-down, timers, calculator
+- [x] 8. js/tools.js — global rest timer bar (startRest, stopRest, restoreTimer; real-clock endAt in localStorage), renderTool(ctx,name) rest|interval|calc|warmup|cooldown. NOTE: app.js imports restoreTimer from workout.js → workout.js must re-export it from tools.js (or change app.js import).
 - [x] 9. js/settings.js — More tab, Settings (all fields), backup export/import UI, delete-all (double confirm), photo resize helper (pickPhoto, resizeImage(file,max,q,asBlob)), applyTheme, backupAgeDays, doExport.
 - [x] 10. reminders — in settings.js: syncReminderInfo (kv 'reminderInfo' for sw.js), in-app timer, periodicSync if granted, .ics calendar export. sw.js still needs to record lastNotified (it can't write kv yet; uses notification tag).
 - [ ] 11. final offline/empty-data/keyboard pass, then final report to user
@@ -58,5 +58,4 @@ icons/, fonts/
   * js/home.js: renderHome(ctx) — search, hero (weekStreak), today/rest-day card, last session, 2 stat cards, coming up, quick tools, backup nudge, resume-workout card.
   * js/workout.js: renderWorkout(ctx), restoreTimer(), startRest(sec,label) + global timer bar in #timer-slot (real-clock endAt in localStorage), active workout engine (saveActiveSync on every input), supersets, feel prompt, swap/add/remove, finish screen (newRecords), wake lock.
   * js/progress.js: renderProgress(ctx, tab) — overview week/month, per-exercise charts, PB list, calendar, body weight, measurements, photos.
-  * js/tools.js: renderTool(ctx, name) for rest | interval | calc | warmup | cooldown.
   * Then: add new files to sw.js FILES, test in Playwright (mobile viewport, offline), final report.
