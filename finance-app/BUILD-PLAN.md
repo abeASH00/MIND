@@ -47,6 +47,7 @@ Done:
 - `app/js/store.js`: in-memory state + save/soft-delete/purge, settings, selectors, attachments, cloud outbox, merchant learning, repeating rules (auto + remind), import apply/undo, start fresh, example data load/clear, wipe, restore (tested in Node with memory fallback)
 - `app/js/cloud.js`: Firebase 10.12.2 from gstatic (loaded on demand), Google sign-in (popup, redirect fallback), pull/push last-write-wins on updatedAt with an outbox; parseConfig accepts the pasted firebaseConfig block
 - `app/js/icons.js`: original line icons (`icon(name, size)`), ACCOUNT_ICON map
+- `app/js/ui.js`: toast (with undo action), bottom sheets, confirmBox, badges, pickFrom/pickAccount/pickCategory (recent + search), calculator keypad (evalAmount tested), header(), shrinkImage, blobToBase64, saveFile (share or download)
 - `tests/core.test.mjs`: 13 passing (`node --test tests/*.test.mjs`)
 - `app/js/calc.js`: periods (payday month start), balances, net worth, category totals, splits,
   label totals, period series, net worth series, budgets, repeating rules, search filter
@@ -64,7 +65,7 @@ To do, in this order:
    merchant extraction, category from merchant memory and then a keyword map (Malaysian merchants),
    duplicates (same amount within 10 min), "already recorded" check, confidence, a plain reason
    sentence, learning, and AI merge.
-6. `app/js/ui.js` (sheets, pickers, confirm, toast, calculator keypad), `charts.js`.
+6. `app/js/charts.js` (columns, line with crosshair, tall segmented bar, meter; see dataviz rules above).
 7. Views in `app/js/views/`: home, history, edit (transaction form with keypad, autocomplete,
    splits, labels, attachment, repeat), accounts and account detail (set balance), reports
    (spending, income, cash flow, net worth, labels), budgets, calendar, bills (repeating rules,
