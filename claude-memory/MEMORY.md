@@ -1,6 +1,6 @@
 # Claude memory: read this first in every new chat
 
-Updated: 2026-11-26 (chat 1, later)
+Updated: 2026-11-27 06:40 MYT
 
 ## About the user
 - Not a developer. Wants plain-word steps and complete copy-paste files, not diffs.
@@ -52,7 +52,13 @@ Updated: 2026-11-26 (chat 1, later)
   Preview saves taps in the browser only. Types use Bluecoins letters e / i / t.
 - User said "just do it first" and skip the questions for now. Still open: three-lane slot,
   Bluecoins CSV export (needed for exact category names in phase 2/3).
-- NEXT: get user's feedback on the preview, then phase 2 (real manual entry + Firebase).
+- 2026-11-26/27: User asked for a COMPLETE app that does everything Bluecoins does, plus their smart
+  features ("use as many tokens as you need"). Own name, look and code; nothing copied from Bluecoins.
+  Full plan and design decisions: finance-app/BUILD-PLAN.md. Read that before continuing.
+- WORK WINDOW: user wants the build to run 3:30am–7:00am Malaysia time and stop at 7am. A reminder
+  is scheduled for 2026-11-28 03:30 MYT to resume. Commit + push after every file.
+- Build progress: util.js, calc.js, csv.js (Bluecoins import/export), smart.js (notification reader),
+  seed.js are done and tested in Node. Next: tests, db/store/cloud, UI, views, PWA files, Worker, SETUP.md, demo artifact.
 
 ### Open questions
 1. (answered: replace)
@@ -64,3 +70,4 @@ Updated: 2026-11-26 (chat 1, later)
 - 2026-11-26: Memory file created. Handoff from earlier chat absorbed.
 - 2026-11-26: User chose to replace Bluecoins. Plan and phases proposed.
 - 2026-11-26: Built and published phase 1 clickable preview (Belanja).
+- 2026-11-27: Started the full app (core logic modules done). Resume 3:30am 28 Nov.
