@@ -44,6 +44,7 @@ Done:
 - `app/js/smart.js`: notification reader (tested on 10 Malaysian examples: payments, card charge duplicate, transfer, reload, TAC, promos, statement, salary)
 - `app/js/seed.js`: default categories (with keys + colour slots c1..c8), the user's 7 accounts with aliases/notification apps, example data (270 tx over ~3 months, budgets, repeating rules, inbox), sample receipt
 - `app/js/db.js`: IndexedDB wrapper (stores: accounts, categories, transactions, budgets, recurring, inbox, memory, attachments, kv, outbox, shares) with in-memory fallback; `upgrade()` shared with the service worker
+- `app/js/store.js`: in-memory state + save/soft-delete/purge, settings, selectors, attachments, cloud outbox, merchant learning, repeating rules (auto + remind), import apply/undo, start fresh, example data load/clear, wipe, restore (tested in Node with memory fallback)
 - `tests/core.test.mjs`: 13 passing (`node --test tests/*.test.mjs`)
 - `app/js/calc.js`: periods (payday month start), balances, net worth, category totals, splits,
   label totals, period series, net worth series, budgets, repeating rules, search filter
@@ -61,7 +62,7 @@ To do, in this order:
    merchant extraction, category from merchant memory and then a keyword map (Malaysian merchants),
    duplicates (same amount within 10 min), "already recorded" check, confidence, a plain reason
    sentence, learning, and AI merge.
-5. `store.js` (state, save, soft delete,
+5. (store.js done) `cloud.js` next. Original note: `store.js` (state, save, soft delete,
    outbox for sync), `cloud.js` (Firebase: Google sign-in by popup with redirect fallback,
    push/pull last-write-wins on `updatedAt`).
 6. `app/js/ui.js` (sheets, pickers, confirm, toast, calculator keypad), `charts.js`, `icons.js`.
