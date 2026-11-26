@@ -29,11 +29,11 @@ original chat (the "BUILD THIS APP ALL THE WAY TO DONE" brief).
 - [x] css/app.css — full design system (light/dark, cards, nav, sheets, set rows, charts, calendar)
 - [~] 1. DONE: index.html, manifest.json, icons/ (PIL), sw.js, _headers, js/ui.js. TODO: js/app.js (router, nav, theme, SW register, onboarding)
 - [x] 2. js/data.js — IndexedDB + backup export/import (done early; written before step 1)
-- [~] 3. DONE: js/exercise-data.js (46 exercises + warm-ups/cool-downs/rest-day ideas), js/figures.js (stick-figure poses). TODO: js/exercises.js views (library, filters, detail, favourites, notes, custom). Polish poses: one-arm row & hip thrust look off.
+- [~] 3. DONE: js/exercise-data.js (46 exercises + warm-ups/cool-downs/rest-day ideas), js/figures.js (stick-figure poses). DONE js/exercises.js (loadExercises, getExercise, allExercises, partName, isFav, renderLibrary(ctx), renderExercise(ctx,id), exercisePicker, searchExercises; custom exercises; favourites; notes). Polish poses: one-arm row & hip thrust look off.
 - [x] 4. js/plans.js — 5 presets (seeded to DB via ensurePresets), builder, reorder/swap/remove, day edit, reset preset. Exports: ensurePresets, activePlan, dayFor, upcoming, dayParts, renderPlans(ctx), renderPlan(ctx,id), searchPlans, PRESETS. Imports from exercises.js: getExercise, allExercises, exercisePicker({title, part, exclude, onPick}) — exercises.js MUST export these.
 - [ ] 5. js/workout.js — set logging, rest timer, resume
 - [x] 6. js/suggest.js — dumbbellSettings, nearestSetting, stepSetting, GOALS, repRange/repText/targetLow/targetHigh, lastPerformance(sessions,exId), suggestFor(ex,last,settings,target) -> {kg,reps,headline,why,ideas,atMax}, calcForTotal. Tested in node.
-- [~] 7. DONE js/stats.js (setVolume, sessionVolume, e1rm, weekKey, weekStreak, bestWeekStreak, weekRange, monthRange, totals, personalBests, newRecords, exerciseSeries, trainedDays; tested). TODO js/progress.js screens.
+- [~] 7. DONE js/stats.js (setVolume, sessionVolume, e1rm, weekKey, weekStreak, bestWeekStreak, weekRange, monthRange, totals, personalBests, newRecords, exerciseSeries, trainedDays; tested). DONE js/charts.js (lineChart(points,{unitKg,pbIndex,second,label}), barChart(bars,{format})). TODO js/progress.js screens.
 - [ ] 8. js/tools.js — warm-up, cool-down, timers, calculator
 - [ ] 9. js/settings.js — settings + backup
 - [ ] 10. reminders
@@ -47,7 +47,7 @@ Session record: {id, startedAt, endedAt, duration(sec), planId, dayName, exercis
 ## Planned file layout
 index.html, _headers (Netlify security headers), manifest.json, sw.js, css/app.css,
 js/{app,ui,data,stats,exercise-data,exercises,figures,plans,workout,suggest,progress,tools,settings,home}.js,
-(remember: add js/exercise-data.js to the FILES list in sw.js; bump VERSION when files change)
+(remember: add js/exercise-data.js AND js/charts.js to the FILES list in sw.js; bump VERSION when files change)
 icons/, fonts/
 
 ## Log
