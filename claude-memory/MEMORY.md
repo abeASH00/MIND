@@ -31,15 +31,24 @@ Updated: 2026-11-26
 - C: write into the backup database. Rejected.
 
 ### Status
-- 2026-11-26: User said "I want to build my own finance app so I can key in my daily expense."
-  Unclear whether this means (a) the receipt-scanner add-on for Bluecoins, or
-  (b) a full app that replaces Bluecoins. Asked the user. Nothing built yet.
+- 2026-11-26: DECIDED: build own app that REPLACES Bluecoins (routes A/B/C above are now moot).
+- Bluecoins notification auto-log IS on, but user finds it bad: it logs every notification blindly.
+  User wants it "intelligent" (skip junk, guess category/account, merge duplicates).
+- Key limit told to user: a web app (PWA) cannot read Android notifications by itself.
+  Proposed: free Android automation app (MacroDroid) forwards bank/e-wallet notifications
+  to a Cloudflare Worker; an AI model filters and drafts the transaction; user taps to confirm
+  in an "Inbox" screen. Receipts: share photo to the app (PWA share target) → AI reads it.
+- Proposed phases: 1 clickable preview (fake data) → 2 manual entry + Firebase save →
+  3 import Bluecoins history from CSV → 4 receipt photo reading → 5 smart notification inbox
+  → 6 reports/budgets.
+- Nothing built yet. Waiting on: three-lane slot, Bluecoins CSV export.
 
 ### Open questions
-1. Replace Bluecoins, or add on to it?
+1. (answered: replace)
 2. One transaction per receipt, or split by line item?
 3. Receipt reading: on the phone (free, weaker) or a cloud AI model (better, small cost per receipt)?
 4. Which current project comes off the three-lane list to make room?
 
 ## Log
 - 2026-11-26: Memory file created. Handoff from earlier chat absorbed.
+- 2026-11-26: User chose to replace Bluecoins. Plan and phases proposed.
