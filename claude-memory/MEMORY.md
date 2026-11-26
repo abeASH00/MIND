@@ -57,8 +57,8 @@ Updated: 2026-11-27 06:45 MYT
   Full plan and design decisions: finance-app/BUILD-PLAN.md. Read that before continuing.
 - WORK WINDOW: user wants the build to run 3:30am–7:00am Malaysia time and stop at 7am. A reminder
   is scheduled for 2026-11-28 03:30 MYT to resume. Commit + push after every file.
-- Build progress (stopped 06:50 MYT 27 Nov): util.js, calc.js, csv.js (Bluecoins import/export), smart.js
-  (notification reader), seed.js, db.js, store.js, cloud.js done; 13 unit tests pass. Next: ui/charts/icons,
+- Build progress (stopped 06:52 MYT 27 Nov): util.js, calc.js, csv.js (Bluecoins import/export), smart.js
+  (notification reader), seed.js, db.js, store.js, cloud.js, icons.js done; 13 unit tests pass. Next: ui.js, charts.js,
   all views, index.html/css/manifest/sw, Worker + wrangler, SETUP.md, demo artifact.
 
 ### Open questions
