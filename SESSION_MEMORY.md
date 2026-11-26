@@ -29,6 +29,7 @@ reminder app):
 | Codebase atlas `docs/other_docs/codebase_atlas.md` (+ mkdocs nav entry) | done |
 | Fix all 16 bugs (markers removed, regression tests added, 467 tests green on 3.8/3.11/3.13) | done |
 | Browser end-to-end tests: `tests/browser_e2e_test.py`, 32 tests (Playwright + Chromium, skipped if not installed) | done |
+| Live run of the real `MIND.py` (scratch copy): DB import keep + auto-revert, hosting-change auto-revert | done, found + fixed BUG-17 |
 
 Branch: `ccr-a5821806-a7lub3` (pushed to origin).
 
@@ -51,7 +52,7 @@ python3 -m unittest discover -s ./tests -p '*.py'
   `python3 -m unittest discover -s ./tests -p 'name_test.py'`, because the
   tests import `_harness` from the tests folder.
 
-### Bugs found (details in the atlas)
+### Bugs found (details in the atlas) — all fixed
 
 | ID | Severity | Summary |
 |----|----------|---------|
@@ -71,6 +72,7 @@ python3 -m unittest discover -s ./tests -p '*.py'
 | BUG-14 | Medium | Deleting a user leaves their other sessions valid → 500s |
 | BUG-15 | High | `/api/notificationservices/available` crashes with current Apprise (frozenset) |
 | BUG-16 | High | DB import moves the file without its WAL sidecars → imported data lost |
+| BUG-17 | High | Every restart crashed: `execv(MIND.py)` needs +x, which the repo doesn't set (found in a live run) |
 
 ### Environment notes
 

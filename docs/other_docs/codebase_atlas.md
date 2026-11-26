@@ -379,7 +379,7 @@ success" (which fails the run), and you remove the marker.
 ## 12. Known bugs
 
 Found during the audit. Each had at least one reproducing test, marked
-`@known_bug`. **All 16 are fixed**, and those tests now guard against
+`@known_bug`. **All 17 are fixed**, and those tests now guard against
 regressions (search for the bug ID in `tests/` to find them).
 
 ### BUG-01 — The scheduler stops for good after the soonest reminder is deleted or moved later
@@ -640,6 +640,28 @@ Tests: `test_import_survives_writes_during_restart_window`,
 *Fix:* don't move live database files. Copy with SQLite's backup API
 (`Connection.backup`): back up the live database to `MIND_original.db`,
 then back up the upload into the live database. Revert the same way.
+
+### BUG-17 — Restarting crashes MIND
+
+*Severity: high. Status: fixed.* `backend/server.py`, `handle_restart`.
+
+MIND restarted with `execv(<path of MIND.py>, ...)`, which executes the
+script file itself. That needs the file's executable bit, but `MIND.py` is
+stored without it in the repository (mode `100644`), so Docker images and
+git checkouts get `PermissionError` and the process dies. That affects
+every restart: the admin panel's Restart button, saving hosting settings,
+database import and both 60-second revert timers. Even with the bit set, the
+`#!/usr/bin/env python3` shebang could start a different Python than the one
+running MIND (e.g. outside its virtual environment).
+
+Found by running a real MIND process against the database-import flow (the
+unit tests mock the restart). Test: `server_test.py`,
+`test_handle_restart_reexecutes_same_interpreter`.
+
+*Fix:* `execv(sys.executable, [sys.executable, <MIND.py>, *flags])`.
+Verified live: import + admin login keeps the import; import without login
+is reverted after a minute; a port change without login is reverted after
+a minute.
 
 ## 13. Smaller findings and observations
 

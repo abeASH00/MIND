@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from os import execv, urandom
-from sys import argv
+from sys import executable
 from threading import Timer, current_thread
 from typing import TYPE_CHECKING, List, NoReturn, Union
 
@@ -210,7 +210,13 @@ class Server(metaclass=Singleton):
 
 		LOGGER.info('Restarting MIND')
 		from MIND import __file__ as mind_file
-		execv(folder_path(mind_file), [argv[0], *self.restart_args])
+		# Run the script with the same interpreter: executing MIND.py itself
+		# needs its executable bit (not set in the repository) and could pick
+		# another Python via the shebang.
+		execv(
+			executable,
+			[executable, folder_path(mind_file), *self.restart_args]
+		)
 
 	def __revert_db(self) -> None:
 		"""Revert database import and restart.
