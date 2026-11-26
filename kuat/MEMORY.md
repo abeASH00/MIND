@@ -35,8 +35,8 @@ original chat (the "BUILD THIS APP ALL THE WAY TO DONE" brief).
 - [x] 6. js/suggest.js — dumbbellSettings, nearestSetting, stepSetting, GOALS, repRange/repText/targetLow/targetHigh, lastPerformance(sessions,exId), suggestFor(ex,last,settings,target) -> {kg,reps,headline,why,ideas,atMax}, calcForTotal. Tested in node.
 - [~] 7. DONE js/stats.js (setVolume, sessionVolume, e1rm, weekKey, weekStreak, bestWeekStreak, weekRange, monthRange, totals, personalBests, newRecords, exerciseSeries, trainedDays; tested). DONE js/charts.js (lineChart(points,{unitKg,pbIndex,second,label}), barChart(bars,{format})). TODO js/progress.js screens.
 - [ ] 8. js/tools.js — warm-up, cool-down, timers, calculator
-- [ ] 9. js/settings.js — settings + backup
-- [ ] 10. reminders
+- [x] 9. js/settings.js — More tab, Settings (all fields), backup export/import UI, delete-all (double confirm), photo resize helper (pickPhoto, resizeImage(file,max,q,asBlob)), applyTheme, backupAgeDays, doExport.
+- [x] 10. reminders — in settings.js: syncReminderInfo (kv 'reminderInfo' for sw.js), in-app timer, periodicSync if granted, .ics calendar export. sw.js still needs to record lastNotified (it can't write kv yet; uses notification tag).
 - [ ] 11. final offline/empty-data/keyboard pass, then final report to user
       (file list, phone test checklist, deploy steps, security review)
 
@@ -59,5 +59,4 @@ icons/, fonts/
   * js/workout.js: renderWorkout(ctx), restoreTimer(), startRest(sec,label) + global timer bar in #timer-slot (real-clock endAt in localStorage), active workout engine (saveActiveSync on every input), supersets, feel prompt, swap/add/remove, finish screen (newRecords), wake lock.
   * js/progress.js: renderProgress(ctx, tab) — overview week/month, per-exercise charts, PB list, calendar, body weight, measurements, photos.
   * js/tools.js: renderTool(ctx, name) for rest | interval | calc | warmup | cooldown.
-  * js/settings.js: renderMore(ctx), renderSettings(ctx), applyTheme(theme), syncReminderInfo() (writes kv 'reminderInfo' for sw.js: {enabled,time,days,lastTrained}); backup export/import UI, reset, reminders (.ics export, notification permission, periodicSync).
   * Then: add new files to sw.js FILES, test in Playwright (mobile viewport, offline), final report.
