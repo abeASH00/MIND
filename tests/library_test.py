@@ -8,7 +8,7 @@ shape, so most tests run against both through a common base class.
 
 import unittest
 
-from _harness import DEFAULT_URL, OTHER_URL, RECORDER, MindTestCase, known_bug
+from _harness import DEFAULT_URL, OTHER_URL, RECORDER, MindTestCase
 
 from backend.custom_exceptions import (NotificationServiceNotFound,
                                        ReminderNotFound, TemplateNotFound)
@@ -76,7 +76,6 @@ class TimelessLibraryTests:
 			with self.assertRaises(NotificationServiceNotFound):
 				self.lib().add('Title', [999])
 
-	@known_bug('BUG-03')
 	def test_add_unknown_service_creates_nothing(self):
 		with self.ctx():
 			with self.assertRaises(NotificationServiceNotFound):
@@ -84,7 +83,6 @@ class TimelessLibraryTests:
 		self.assertEqual(self.count(), 0)
 		self.assertEqual(self.sql("SELECT COUNT(*) FROM reminder_services;"), [(0,)])
 
-	@known_bug('BUG-02')
 	def test_add_with_service_of_other_user(self):
 		with self.ctx():
 			with self.assertRaises(NotificationServiceNotFound):
@@ -187,7 +185,6 @@ class TimelessLibraryTests:
 			with self.assertRaises(NotificationServiceNotFound):
 				self.lib().fetchone(entry_id).update(notification_services=[999])
 
-	@known_bug('BUG-03')
 	def test_failed_update_changes_nothing(self):
 		entry_id = self.make()
 		with self.ctx():
@@ -198,7 +195,6 @@ class TimelessLibraryTests:
 		self.assertEqual(result['title'], 'Original')
 		self.assertEqual(result['notification_services'], [self.s1])
 
-	@known_bug('BUG-02')
 	def test_update_with_service_of_other_user(self):
 		entry_id = self.make()
 		with self.ctx():
@@ -280,10 +276,9 @@ class Test_StaticReminders(TimelessLibraryTests, MindTestCase):
 				self.lib().trigger_reminder(bob_entry)
 		self.assertEqual(RECORDER.sent, [])
 
-	@known_bug('BUG-02')
 	def test_trigger_never_uses_other_users_services(self):
-		# If linking a foreign service were rejected (BUG-02), triggering
-		# could never reach another user's notification URL.
+		# Linking a foreign service is rejected (BUG-02), so triggering can
+		# never reach another user's notification URL.
 		with self.ctx():
 			try:
 				entry_id = self.lib().add('Sneaky', [self.bob_service]).id

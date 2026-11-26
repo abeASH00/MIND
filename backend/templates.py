@@ -8,6 +8,7 @@ from backend.custom_exceptions import (NotificationServiceNotFound,
 from backend.db import get_db
 from backend.helpers import TimelessSortingMethod, search_filter
 from backend.logging import LOGGER
+from backend.notification_service import check_notification_services
 
 
 class Template:
@@ -25,6 +26,7 @@ class Template:
 			owned by user.
 		"""
 		self.id = template_id
+		self.user_id = user_id
 		
 		exists = get_db().execute(
 			"SELECT 1 FROM templates WHERE id = ? AND user_id = ? LIMIT 1;",
@@ -109,6 +111,10 @@ class Template:
 			+ f'{title=}, {notification_services=}, {text=}, {color=}'
 		)
 
+		if notification_services:
+			# Before writing anything, so that a bad ID changes nothing
+			check_notification_services(self.user_id, notification_services)
+
 		cursor = get_db()
 		
 		data = self.get()
@@ -152,6 +158,7 @@ class Template:
 				cursor.execute("COMMIT;")
 
 			except IntegrityError:
+				cursor.execute("ROLLBACK;")
 				raise NotificationServiceNotFound
 
 			finally:
@@ -279,6 +286,8 @@ class Templates:
 			f'Adding template with {title=}, {notification_services=}, {text=}, {color=}'
 		)
 
+		check_notification_services(self.user_id, notification_services)
+
 		cursor = get_db()
 		cursor.connection.isolation_level = None
 		cursor.execute("BEGIN TRANSACTION;")
@@ -303,6 +312,7 @@ class Templates:
 			cursor.execute("COMMIT;")
 
 		except IntegrityError:
+			cursor.execute("ROLLBACK;")
 			raise NotificationServiceNotFound
 
 		finally:

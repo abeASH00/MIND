@@ -304,8 +304,15 @@ class Test_Logging(unittest.TestCase):
 					self.assertIn('first debug line', f.read())
 
 				# Going back to INFO and then DEBUG again clears the file
+				debug_handler = root.handlers[
+					self.mind_logging.LOGGING_CONFIG['root']['handlers'].index('debug_file')
+				]
+				first_stream = debug_handler.stream
 				self.mind_logging.set_log_level(logging.INFO)
 				self.mind_logging.set_log_level(logging.DEBUG)
+				# ...and doesn't leak the previous file handle
+				self.assertTrue(first_stream.closed)
+				self.assertIsNot(debug_handler.stream, first_stream)
 				with open(log_file) as f:
 					self.assertEqual(f.read(), '')
 

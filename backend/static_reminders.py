@@ -10,6 +10,7 @@ from backend.custom_exceptions import (NotificationServiceNotFound,
 from backend.db import get_db
 from backend.helpers import TimelessSortingMethod, search_filter
 from backend.logging import LOGGER
+from backend.notification_service import check_notification_services
 
 
 class StaticReminder:
@@ -27,6 +28,7 @@ class StaticReminder:
 			owned by user.
 		"""
 		self.id = reminder_id
+		self.user_id = user_id
 		
 		# Check if reminder exists
 		if not get_db().execute(
@@ -113,6 +115,10 @@ class StaticReminder:
 			+ f'{title=}, {notification_services=}, {text=}, {color=}'
 		)
 
+		if notification_services:
+			# Before writing anything, so that a bad ID changes nothing
+			check_notification_services(self.user_id, notification_services)
+
 		# Get current data and update it with new values
 		data = self.get()
 		new_values = {
@@ -158,6 +164,7 @@ class StaticReminder:
 				cursor.execute("COMMIT;")
 
 			except IntegrityError:
+				cursor.execute("ROLLBACK;")
 				raise NotificationServiceNotFound
 
 			finally:
@@ -285,6 +292,8 @@ class StaticReminders:
 			f'Adding static reminder with {title=}, {notification_services=}, {text=}, {color=}'
 		)
 
+		check_notification_services(self.user_id, notification_services)
+
 		cursor = get_db()
 		cursor.connection.isolation_level = None
 		cursor.execute("BEGIN TRANSACTION;")
@@ -309,6 +318,7 @@ class StaticReminders:
 			cursor.execute("COMMIT;")
 
 		except IntegrityError:
+			cursor.execute("ROLLBACK;")
 			raise NotificationServiceNotFound
 		finally:
 			cursor.connection.isolation_level = ""

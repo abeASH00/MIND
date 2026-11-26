@@ -171,7 +171,7 @@ function deleteService(id, delete_reminders_using=false) {
 		};
 	})
 	.catch(e => {
-		if (e.error === 'ApiKeyExpired' || e.error === 'ApiKeyInvalid')
+		if (e.error === 'APIKeyExpired' || e.error === 'APIKeyInvalid')
 			window.location.href = `${url_prefix}/`;
 
 		else if (e.error === 'NotificationServiceInUse') {

@@ -16,8 +16,8 @@ from datetime import datetime
 from unittest import mock
 
 from _harness import (DEFAULT_URL, OTHER_URL, RECORDER, FakeTimer, MindClock,
-                      MindTestCase, frozen_datetime, future, known_bug,
-                      local_ts, mind_now)
+                      MindTestCase, frozen_datetime, future, local_ts,
+                      mind_now)
 
 from backend.custom_exceptions import (InvalidKeyValue, InvalidTime,
                                        NotificationServiceNotFound,
@@ -109,7 +109,6 @@ class Test_FindNextTime_Repeat(unittest.TestCase):
 			datetime(2027, 2, 28, 9, 0)
 		)
 
-	@known_bug('BUG-05')
 	def test_month_end_does_not_drift(self):
 		# A monthly reminder on the 31st should fire on the last day of
 		# every month, not stay stuck on the 28th after February.
@@ -119,7 +118,6 @@ class Test_FindNextTime_Repeat(unittest.TestCase):
 			datetime(2027, 4, 30, 9, 0)
 		)
 
-	@known_bug('BUG-05')
 	def test_leap_day_yearly_does_not_drift(self):
 		original = datetime(2028, 2, 29, 9, 0)
 		self.assertEqual(
@@ -195,7 +193,6 @@ class Test_FindNextTime_Weekdays(unittest.TestCase):
 			datetime(2027, 1, 7, 9, 0)
 		)
 
-	@known_bug('BUG-06')
 	def test_first_occurrence_on_selected_day_is_kept(self):
 		# Set for Wednesday 09:00, repeating on Wednesdays: the first
 		# notification should be that Wednesday, not a week later.
@@ -204,7 +201,6 @@ class Test_FindNextTime_Weekdays(unittest.TestCase):
 			datetime(2027, 1, 6, 9, 0)
 		)
 
-	@known_bug('BUG-06')
 	def test_every_day_starting_today_fires_today(self):
 		self.assertEqual(
 			next_time(self.MONDAY, datetime(2027, 1, 4, 9, 0), weekdays=list(range(7))),
@@ -357,7 +353,11 @@ class Test_RemindersAdd(LibraryTestCase):
 		self.assertEqual(result['weekdays'], [MON, FRI])
 		self.assertEqual(self.sql("SELECT weekdays, original_time FROM reminders;"), [('0,4', t)])
 		self.assertIn(datetime.fromtimestamp(result['time']).weekday(), (MON, FRI))
-		self.assertGreater(result['time'], t)
+		if datetime.fromtimestamp(t).weekday() in (MON, FRI):
+			# The chosen day is a selected weekday: it is the first occurrence
+			self.assertEqual(result['time'], t)
+		else:
+			self.assertGreater(result['time'], t)
 
 	def test_add_arms_scheduler(self):
 		t = future(600)
@@ -548,7 +548,6 @@ class Test_ReminderUpdate(LibraryTestCase):
 			with self.assertRaises(NotificationServiceNotFound):
 				self.reminders().fetchone(self.id).update(notification_services=[999])
 
-	@known_bug('BUG-03')
 	def test_failed_update_changes_nothing(self):
 		with self.ctx():
 			with self.assertRaises(NotificationServiceNotFound):
@@ -560,7 +559,6 @@ class Test_ReminderUpdate(LibraryTestCase):
 		self.assertEqual(result['title'], 'Original')
 		self.assertEqual(result['notification_services'], [self.s1])
 
-	@known_bug('BUG-02')
 	def test_update_with_service_of_other_user(self):
 		with self.ctx():
 			with self.assertRaises(NotificationServiceNotFound):
@@ -722,14 +720,18 @@ class Test_Scheduler(SchedulerTestCase):
 
 	def test_trigger_reschedules_weekday(self):
 		# Monday 08:00 now; Monday 09:00 reminder repeating on Mon and Thu.
-		# (Its first occurrence is moved to Thursday, see BUG-06.)
 		rid = self.add('Weekly', 3600, weekdays=[MON, THU])
 		first = self.handler.time
-		self.assertEqual(datetime.fromtimestamp(first).weekday(), THU)
+		self.assertEqual(first, self.START + 3600)
 		self.fire()
 		second = self.sql("SELECT time FROM reminders WHERE id = ?;", (rid,))[0][0]
-		self.assertEqual(datetime.fromtimestamp(second).weekday(), MON)
-		self.assertEqual(second - first, 4 * 86400)
+		self.assertEqual(datetime.fromtimestamp(second).weekday(), THU)
+		self.assertEqual(second - first, 3 * 86400)
+		self.fire()
+		third = self.sql("SELECT time FROM reminders WHERE id = ?;", (rid,))[0][0]
+		self.assertEqual(datetime.fromtimestamp(third).weekday(), MON)
+		self.assertEqual(third - second, 4 * 86400)
+		self.assertEqual(RECORDER.titles(), ['Weekly', 'Weekly'])
 
 	def test_only_reminders_at_that_time_are_sent(self):
 		self.add('first', 60)
@@ -742,7 +744,6 @@ class Test_Scheduler(SchedulerTestCase):
 		self.assertIsNone(self.armed())
 		self.assertEqual(self.live_timers(), [])
 
-	@known_bug('BUG-04')
 	def test_reminders_of_different_users_at_same_time(self):
 		self.add('alice', 60)
 		with self.ctx():
@@ -766,7 +767,6 @@ class Test_Scheduler(SchedulerTestCase):
 		self.handler.stop_handling()
 		self.assertTrue(timer.cancelled)
 
-	@known_bug('BUG-01')
 	def test_deleting_soonest_reminder_keeps_schedule_alive(self):
 		first = self.add('first', 60)
 		self.add('second', 120)
@@ -782,7 +782,6 @@ class Test_Scheduler(SchedulerTestCase):
 				break
 		self.assertEqual(RECORDER.titles(), ['second'])
 
-	@known_bug('BUG-01')
 	def test_moving_soonest_reminder_later_keeps_schedule_alive(self):
 		rid = self.add('moved', 60)
 		with self.ctx():
@@ -795,16 +794,116 @@ class Test_Scheduler(SchedulerTestCase):
 				break
 		self.assertEqual(RECORDER.titles(), ['moved'])
 
-	@known_bug('BUG-01')
-	def test_new_reminder_is_scheduled_after_empty_trigger(self):
-		rid = self.add('deleted', 60)
+	def test_deleting_soonest_reminder_rearms_immediately(self):
+		first = self.add('first', 60)
+		self.add('second', 120)
+		with self.ctx():
+			self.reminders().fetchone(first).delete()
+		self.assertEqual(self.armed(), (self.START + 120, 120))
+		self.assertEqual(self.live_timers(), [self.START + 120])
+
+	def test_moving_soonest_reminder_later_rearms_immediately(self):
+		rid = self.add('moved', 60)
+		self.add('other', 600)
+		with self.ctx():
+			self.reminders().fetchone(rid).update(title='moved', time=self.START + 3600)
+		self.assertEqual(self.armed(), (self.START + 600, 600))
+		self.assertEqual(self.live_timers(), [self.START + 600])
+
+	def test_deleting_last_reminder_disarms(self):
+		rid = self.add('only', 60)
 		with self.ctx():
 			self.reminders().fetchone(rid).delete()
-		self.fire() # The stale timer fires on an empty slot
+		self.assertIsNone(self.armed())
+		self.assertEqual(self.live_timers(), [])
 		self.add('new', 600)
-		self.assertEqual(self.armed(), (self.START + 600, 600 - 60))
+		self.assertEqual(self.armed(), (self.START + 600, 600))
 
-	@known_bug('BUG-04')
+	def test_stale_timer_on_empty_slot_rearms(self):
+		# Reminders can disappear without the scheduler being told (e.g. by
+		# hand in the database). The stale timer must still re-arm.
+		rid = self.add('vanished', 60)
+		self.add('next', 300)
+		self.sql("DELETE FROM reminders WHERE id = ?;", (rid,))
+		self.fire()
+		self.assertEqual(RECORDER.sent, [])
+		self.assertEqual(self.armed(), (self.START + 300, 240))
+
+	def test_stale_timer_with_nothing_left(self):
+		rid = self.add('vanished', 60)
+		self.sql("DELETE FROM reminders WHERE id = ?;", (rid,))
+		self.fire()
+		self.assertIsNone(self.armed())
+		self.add('new', 600)
+		self.assertEqual(self.armed(), (self.START + 600, 540))
+
+	def test_failing_send_does_not_block_the_rest(self):
+		self.add('broken', 60)
+		self.add('fine', 60)
+		original_notify = RECORDER.record
+		calls = []
+		def flaky(title, body, urls):
+			calls.append(title)
+			if title == 'broken':
+				raise RuntimeError('service down')
+			original_notify(title, body, urls)
+		with mock.patch.object(RECORDER, 'record', side_effect=flaky):
+			self.fire()
+		self.assertEqual(sorted(calls), ['broken', 'fine'])
+		self.assertEqual(RECORDER.titles(), ['fine'])
+		# The broken one-off is still removed instead of firing in a loop
+		self.assertEqual(self.sql("SELECT COUNT(*) FROM reminders;"), [(0,)])
+		self.assertIsNone(self.armed())
+
+	def test_failing_reschedule_does_not_block_the_rest(self):
+		from backend.reminders import ReminderHandler
+		real = ReminderHandler._ReminderHandler__move_along
+		def flaky(handler, reminder):
+			if reminder['title'] == 'stuck':
+				raise RuntimeError('database trouble')
+			return real(handler, reminder)
+		self.add('stuck', 60)
+		self.add('fine', 60)
+		with mock.patch.object(ReminderHandler, '_ReminderHandler__move_along', flaky):
+			self.fire()
+		self.assertEqual(sorted(RECORDER.titles()), ['fine', 'stuck'])
+		self.assertEqual(
+			[r[0] for r in self.sql("SELECT title FROM reminders;")],
+			['stuck']
+		)
+		# 'stuck' is still due: retry in a minute instead of spinning
+		self.assertEqual(self.armed(), (self.START + 60, 60))
+		self.assertEqual(self.live_timers(), [self.START + 60])
+
+		# Once the trouble is over, the retry sends and removes it
+		self.clock.advance(60)
+		self.handler.thread.fire()
+		self.assertEqual(sorted(RECORDER.titles()), ['fine', 'stuck', 'stuck'])
+		self.assertEqual(self.sql("SELECT COUNT(*) FROM reminders;"), [(0,)])
+		self.assertIsNone(self.armed())
+
+	def test_deleting_a_user_rearms(self):
+		self.add('alice', 60)
+		with self.ctx():
+			Reminders(self.bob_id).add('bob', self.START + 600, [self.bob_service])
+		with self.ctx():
+			Users().get_one(self.alice_id).delete()
+		self.assertEqual(self.armed(), (self.START + 600, 600))
+
+	def test_monthly_on_the_31st_for_a_year(self):
+		rid = self.add('Rent', 0, repeat_quantity=MONTHS, repeat_interval=1)
+		with self.ctx():
+			self.reminders().fetchone(rid).update(
+				title='Rent', time=local_ts(2030, 1, 31, 9, 0),
+				repeat_quantity=MONTHS, repeat_interval=1
+			)
+		days = []
+		for _ in range(12):
+			self.fire()
+			days.append(datetime.fromtimestamp(self.handler.time).day)
+		# Feb 28, Mar 31, Apr 30, ... , Jan 31
+		self.assertEqual(days, [28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31])
+
 	def test_same_time_one_offs_are_all_sent_once(self):
 		self.add('one', 60)
 		self.add('two', 60)
@@ -813,7 +912,6 @@ class Test_Scheduler(SchedulerTestCase):
 		self.assertEqual(sorted(RECORDER.titles()), ['one', 'three', 'two'])
 		self.assertEqual(self.sql("SELECT COUNT(*) FROM reminders;"), [(0,)])
 
-	@known_bug('BUG-04')
 	def test_same_time_batch_does_not_rearm_for_itself(self):
 		# While a batch is being processed, the scheduler must not arm a new
 		# timer for the batch's own timestamp: in production that timer fires
@@ -846,7 +944,6 @@ class Test_Scheduler_RealTime(LibraryTestCase):
 			lambda: self.sql("SELECT COUNT(*) FROM reminders;") == [(0,)]
 		))
 
-	@known_bug('BUG-01')
 	def test_deleted_soonest_does_not_stall(self):
 		base = int(mind_now())
 		with self.ctx():
@@ -856,7 +953,6 @@ class Test_Scheduler_RealTime(LibraryTestCase):
 			self.reminders().fetchone(first).delete()
 		self.assertTrue(self.wait_for(lambda: RECORDER.titles() == ['second'], 5))
 
-	@known_bug('BUG-04')
 	def test_same_time_batch_is_not_sent_twice(self):
 		t = int(mind_now()) + 2
 		with self.ctx():

@@ -2,22 +2,24 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlite3 import IntegrityError
-from threading import Timer
-from typing import TYPE_CHECKING, Callable, List, Optional, Tuple, Union
+from threading import RLock, Timer, current_thread, main_thread
+from typing import TYPE_CHECKING, Callable, List, Optional, Union
 
 from apprise import Apprise
 from dateutil.relativedelta import relativedelta
 from dateutil.relativedelta import weekday as du_weekday
+from flask import has_app_context
 
 from backend.custom_exceptions import (InvalidKeyValue, InvalidTime,
                                        NotificationServiceNotFound,
                                        ReminderNotFound)
-from backend.db import get_db
+from backend.db import DB_Singleton, DBConnection, get_db
 from backend.helpers import (RepeatQuantity, Singleton, SortingMethod,
                              search_filter, when_not_none)
 from backend.logging import LOGGER
+from backend.notification_service import check_notification_services
 
 if TYPE_CHECKING:
 	from flask.ctx import AppContext
@@ -75,20 +77,35 @@ def _find_next_time(
 	new_time = datetime.fromtimestamp(original_time)
 	current_time = datetime.fromtimestamp(datetime.utcnow().timestamp())
 
-	if repeat_quantity is not None:
-		td = relativedelta(**{repeat_quantity.value: repeat_interval})
-		while new_time <= current_time:
-			new_time += td
+	if repeat_quantity is not None and new_time <= current_time:
+		# Always step from the original time (original + n * interval)
+		# instead of adding the interval to the previous result. Months and
+		# years get clamped to shorter months, and accumulating would keep
+		# that clamp: Jan 31 -> Feb 28 -> Mar 28 instead of Mar 31.
+		original = new_time
+		if repeat_quantity in (RepeatQuantity.MONTHS, RepeatQuantity.YEARS):
+			td = relativedelta(**{repeat_quantity.value: repeat_interval})
+			n = 0
+			while new_time <= current_time:
+				n += 1
+				new_time = original + td * n
 
-	elif weekdays is not None:
-		# We run the loop contents at least once and then actually use the cond.
-		# This is because we need to force the 'free' date to go to one of the
-		# selected weekdays.
+		else:
+			# Fixed length steps: jump straight to the first one in the future
+			step = timedelta(**{repeat_quantity.value: repeat_interval})
+			n = (current_time - original) // step + 1
+			new_time = original + step * n
+
+	elif repeat_quantity is None and weekdays is not None:
+		# If the 'free' date is not one of the selected weekdays, it is forced
+		# to the next selected weekday first, so the loop has to run at least
+		# once.
 		# Say it's Monday, we set a reminder for Wednesday and make it repeat
 		# on Tuesday and Thursday. Then the first notification needs to go on
-		# Thurday, not Wednesday. So run code at least once to force that.
+		# Thurday, not Wednesday. If the date is one of the selected weekdays,
+		# it can be used as is (if it's in the future).
 		# Afterwards, it can run normally to push the timestamp into the future.
-		one_to_go = True
+		one_to_go = new_time.weekday() not in weekdays
 		while one_to_go or new_time <= current_time:
 			next_day = __next_selected_day(weekdays, new_time.weekday())
 			proposed_time = new_time + relativedelta(weekday=du_weekday(next_day))
@@ -121,6 +138,7 @@ class Reminder:
 			owned by user.
 		"""
 		self.id = reminder_id
+		self.user_id = user_id
 
 		# Check if reminder exists
 		if not get_db().execute(
@@ -238,7 +256,7 @@ class Reminder:
 			dict: The new reminder info.
 		"""
 		LOGGER.info(
-			f'Updating notification service {self.id}: '
+			f'Updating reminder {self.id}: '
 			+ f'{title=}, {time=}, {notification_services=}, {text=}, '
 			+ f'{repeat_quantity=}, {repeat_interval=}, {weekdays=}, {color=}'
 		)
@@ -251,6 +269,10 @@ class Reminder:
 			raise InvalidKeyValue('repeat_interval', repeat_interval)
 		elif weekdays is not None and repeat_quantity is not None:
 			raise InvalidKeyValue('weekdays', weekdays)
+
+		if notification_services:
+			# Before writing anything, so that a bad ID changes nothing
+			check_notification_services(self.user_id, notification_services)
 
 		repeated_reminder = (
 			(repeat_quantity is not None and repeat_interval is not None)
@@ -364,12 +386,15 @@ class Reminder:
 				cursor.execute("COMMIT;")
 
 			except IntegrityError:
+				cursor.execute("ROLLBACK;")
 				raise NotificationServiceNotFound
 
 			finally:
 				cursor.connection.isolation_level = ""
 
-		ReminderHandler().find_next_reminder(next_time)
+		# Recalculate instead of passing next_time: if this was the soonest
+		# reminder and it moved later, the timer has to move too.
+		ReminderHandler().find_next_reminder()
 		return self.get()
 
 	def delete(self) -> None:
@@ -539,17 +564,7 @@ class Reminders:
 			raise InvalidKeyValue('weekdays', weekdays)
 
 		cursor = get_db()
-		for service in notification_services:
-			if not cursor.execute("""
-				SELECT 1
-				FROM notification_services
-				WHERE id = ?
-					AND user_id = ?
-				LIMIT 1;
-				""",
-				(service, self.user_id)
-			).fetchone():
-				raise NotificationServiceNotFound
+		check_notification_services(self.user_id, notification_services)
 
 		# Prepare args
 		if any((repeat_quantity, weekdays)):
@@ -610,6 +625,7 @@ class Reminders:
 			cursor.execute("COMMIT;")
 
 		except IntegrityError:
+			cursor.execute("ROLLBACK;")
 			raise NotificationServiceNotFound
 
 		finally:
@@ -676,6 +692,72 @@ class ReminderHandler(metaclass=Singleton):
 		self.context = context
 		self.thread: Union[Timer, None] = None
 		self.time: Union[int, None] = None
+		self.lock = RLock()
+		"Guards `self.thread` and `self.time`"
+		return
+
+	def __send_reminder(self, reminder: dict) -> None:
+		"""Send the notification of a reminder.
+
+		Args:
+			reminder (dict): The reminder, with at least the keys `id`,
+			`title` and `text`.
+		"""
+		# Fetch all rows at once: `get_db()` returns a cursor that is shared
+		# within the app context, so it must not be iterated while other
+		# queries run on it.
+		urls = [
+			r[0]
+			for r in get_db().execute("""
+				SELECT url
+				FROM reminder_services rs
+				INNER JOIN notification_services ns
+				ON rs.notification_service_id = ns.id
+				WHERE rs.reminder_id = ?;
+				""",
+				(reminder['id'],)
+			).fetchall()
+		]
+
+		a = Apprise()
+		for url in urls:
+			a.add(url)
+		a.notify(title=reminder["title"], body=reminder["text"] or '\u200B')
+		return
+
+	def __move_along(self, reminder: dict) -> None:
+		"""After a reminder has been sent, delete it (one-off) or set it to its
+		next occurrence (repeating).
+
+		Args:
+			reminder (dict): The reminder, with at least the keys `id`,
+			`repeat_quantity`, `repeat_interval`, `weekdays` and
+			`original_time`.
+		"""
+		if (reminder['repeat_quantity'], reminder['weekdays']) == (None, None):
+			LOGGER.info(f'Deleting reminder {reminder["id"]}')
+			get_db().execute(
+				"DELETE FROM reminders WHERE id = ?;",
+				(reminder['id'],)
+			)
+			return
+
+		new_time = _find_next_time(
+			reminder['original_time'],
+			when_not_none(
+				reminder["repeat_quantity"],
+				lambda q: RepeatQuantity(q)
+			),
+			reminder['repeat_interval'],
+			when_not_none(
+				reminder["weekdays"],
+				lambda w: [int(d) for d in w.split(',')]
+			)
+		)
+		get_db().execute(
+			"UPDATE reminders SET time = ? WHERE id = ?;",
+			(new_time, reminder['id'])
+		)
 		return
 
 	def __trigger_reminders(self, time: int) -> None:
@@ -684,107 +766,147 @@ class ReminderHandler(metaclass=Singleton):
 		Args:
 			time (int): The time of the reminders to trigger
 		"""
-		with self.context():
-			cursor = get_db(dict)
-			reminders = [
-				dict(r)
-				for r in cursor.execute("""
-					SELECT
-						id, user_id,
-						title, text,
-						repeat_quantity, repeat_interval,
-						weekdays,
-						original_time
-					FROM reminders
-					WHERE time = ?;
-					""",
-					(time,)
-				)
-			]
-			
-			for reminder in reminders:
-				cursor.execute("""
-					SELECT url
-					FROM reminder_services rs
-					INNER JOIN notification_services ns
-					ON rs.notification_service_id = ns.id
-					WHERE rs.reminder_id = ?;
-					""",
-					(reminder['id'],)
-				)
+		try:
+			with self.context():
+				cursor = get_db(dict)
+				reminders = [
+					dict(r)
+					for r in cursor.execute("""
+						SELECT
+							id, user_id,
+							title, text,
+							repeat_quantity, repeat_interval,
+							weekdays,
+							original_time
+						FROM reminders
+						WHERE time = ?;
+						""",
+						(time,)
+					).fetchall()
+				]
 
-				# Send reminder
-				a = Apprise()
-				for url in cursor:
-					a.add(url['url'])
-				a.notify(title=reminder["title"], body=reminder["text"] or '\u200B')
-
-				self.thread = None
-				self.time = None
-
-				if (reminder['repeat_quantity'], reminder['weekdays']) == (None, None):
-					# Delete the reminder from the database
-					Reminder(reminder["user_id"], reminder["id"]).delete()
-
-				else:
-					# Set next time
-					new_time = _find_next_time(
-						reminder['original_time'],
-						when_not_none(
-							reminder["repeat_quantity"],
-							lambda q: RepeatQuantity(q)
-						),
-						reminder['repeat_interval'],
-						when_not_none(
-							reminder["weekdays"],
-							lambda w: [int(d) for d in w.split(',')]
+				for reminder in reminders:
+					try:
+						self.__send_reminder(reminder)
+					except Exception:
+						# Still move the reminder along below, so that one
+						# failing reminder doesn't fire over and over again
+						LOGGER.exception(
+							f'Failed to send reminder {reminder["id"]}'
 						)
-					)
-					cursor.execute(
-						"UPDATE reminders SET time = ? WHERE id = ?;",
-						(new_time, reminder['id'])
-					)
 
-				self.find_next_reminder()
-			return
+					try:
+						self.__move_along(reminder)
+					except Exception:
+						LOGGER.exception(
+							f'Failed to reschedule reminder {reminder["id"]}'
+						)
+
+		finally:
+			# The timer that brought us here has fired. Always arm the next
+			# one, also when no reminder had this time anymore (it was
+			# deleted or moved) or when something went wrong. Only once the
+			# whole batch is done though: arming earlier would start a timer
+			# for the rest of this batch, sending it twice.
+			with self.lock:
+				if (
+					self.thread is None
+					or self.thread is current_thread()
+					or not self.thread.is_alive()
+				):
+					self.thread = None
+					self.time = None
+			self.find_next_reminder()
+
+			with self.lock:
+				if self.time is not None and self.time <= time:
+					# A reminder of this batch couldn't be moved along (the
+					# error is logged above). Don't fire again right away
+					# in a loop; retry in a minute.
+					LOGGER.warning(
+						'Reminders could not be rescheduled; retrying in 60 seconds'
+					)
+					self.__arm(self.time, delay=60.0)
+
+			if current_thread() is not main_thread():
+				# Every trigger runs in a new thread; don't leave its
+				# database connection open.
+				key = f'{DBConnection}{current_thread()}'
+				connection = DB_Singleton._instances.pop(key, None)
+				if connection is not None and not connection.closed:
+					connection.close()
+		return
+
+	def __get_soonest_time(self) -> Union[int, None]:
+		"""Get the time of the soonest reminder.
+
+		Returns:
+			Union[int, None]: The timestamp, or `None` if there are no
+			reminders.
+		"""
+		query = "SELECT MIN(time) FROM reminders;"
+		if has_app_context():
+			return get_db().execute(query).fetchone()[0]
+
+		with self.context():
+			return get_db().execute(query).fetchone()[0]
+
+	def __arm(self, time: int, delay: Optional[float] = None) -> None:
+		"""Replace the current timer (if any) with one for `time`.
+
+		Args:
+			time (int): The timestamp of the reminders to trigger.
+			delay (Optional[float], optional): Trigger after this many
+			seconds instead of at `time`.
+				Defaults to None.
+		"""
+		if self.thread is not None:
+			self.thread.cancel()
+
+		t = (
+			delay
+			if delay is not None else
+			time - datetime.utcnow().timestamp()
+		)
+		self.thread = Timer(
+			t,
+			self.__trigger_reminders,
+			(time,)
+		)
+		self.thread.name = "ReminderHandler"
+		self.thread.start()
+		self.time = time
+		return
 
 	def find_next_reminder(self, time: Optional[int] = None) -> None:
 		"""Determine when the soonest reminder is and set the timer to that time
 
 		Args:
-			time (Optional[int], optional): The timestamp to check for.
-			Otherwise check soonest in database.
+			time (Optional[int], optional): The timestamp of a reminder that
+			was just added. The timer is moved if it's earlier than the
+			current one. Otherwise the soonest time in the database is used,
+			and the timer always follows it, also when it's later (because
+			the soonest reminder was deleted or moved).
 				Defaults to None.
 		"""
-		if time is None:
-			with self.context():
-				soonest_time: Union[Tuple[int], None] = get_db().execute("""
-					SELECT DISTINCT r1.time
-					FROM reminders r1
-					LEFT JOIN reminders r2
-					ON r1.time > r2.time
-					WHERE r2.id IS NULL;
-				""").fetchone()
+		with self.lock:
+			if time is None:
+				soonest_time = self.__get_soonest_time()
 				if soonest_time is None:
-					return
-				time = soonest_time[0]
+					# No reminders left
+					self.stop_handling()
+					self.thread = None
+					self.time = None
 
-		if (
-			self.thread is None
-			or time < self.time
-		):
-			if self.thread is not None:
-				self.thread.cancel()
+				elif self.thread is None or soonest_time != self.time:
+					self.__arm(soonest_time)
 
-			t = time - datetime.utcnow().timestamp()
-			self.thread = Timer(
-				t,
-				self.__trigger_reminders,
-				(time,)
-			)
-			self.thread.name = "ReminderHandler"
-			self.thread.start()
-			self.time = time
+			elif (
+				self.thread is None
+				or self.time is None
+				or time < self.time
+			):
+				self.__arm(time)
 
 		return
 	

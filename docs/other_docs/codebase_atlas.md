@@ -232,23 +232,34 @@ config: key → value  (settings, database_version, *_backup hosting settings)
 `ReminderHandler` (a `Singleton`) holds at most one `threading.Timer`
 (`self.thread`) and the timestamp it waits for (`self.time`).
 
-- **`find_next_reminder(time=None)`**: without an argument, query the
-  smallest `reminders.time`. Then (re)arm the timer if there is none, or if
-  the new time is earlier than the armed one. A *later* time never replaces
-  the armed timer, because the armed reminder still has to fire first.
-- Every add/update/delete of a reminder calls `find_next_reminder`.
+- **`find_next_reminder(time)`** is called after adding a reminder. It only
+  moves the timer if `time` is earlier than the armed one.
+- **`find_next_reminder()`** (no argument) is called after updates and
+  deletes (of reminders, notification services with their reminders, and
+  users). It looks up the soonest `reminders.time` and makes the timer
+  follow it, also when it's *later* than the armed time (the soonest
+  reminder was deleted or moved). With no reminders left, the timer is
+  stopped.
+- Both run under a lock, so requests and the timer thread can't arm two
+  timers.
 - **`__trigger_reminders(time)`** runs in the timer thread. For every
   reminder whose `time` equals the fired time: collect the Apprise URLs of
   its services, send `title`/`text` (an empty text becomes U+200B, because
   some services reject empty bodies), then delete the reminder (one-off) or
-  set `time` to `_find_next_time(original_time, ...)` (repeating). After each
-  reminder it calls `find_next_reminder()` to arm the next timer.
+  set `time` to `_find_next_time(original_time, ...)` (repeating). A failure
+  in one reminder is logged and doesn't stop the others. Only when the
+  whole batch is done, the next timer is armed, always, even when nothing
+  matched. If a reminder of the batch couldn't be moved along, the slot is
+  retried after 60 seconds instead of in a tight loop. Finally the timer
+  thread closes its database connection.
 - **`_find_next_time(original, quantity, interval, weekdays)`**:
-	- Repeat: start at `original` and keep adding `relativedelta(**{quantity:
-	  interval})` until strictly after now.
-	- Weekdays: move to the next selected weekday at least once (so a
-	  reminder set for a day that isn't selected moves to the next selected
-	  day), then keep moving until strictly after now.
+	- Repeat: the first `original + n × relativedelta(**{quantity:
+	  interval})` strictly after now. Always counted from `original`, so a
+	  monthly reminder on the 31st fires on the last day of shorter months
+	  and returns to the 31st afterwards.
+	- Weekdays: if the start date isn't a selected weekday, it moves to the
+	  next selected one first. Then it keeps moving to the next selected
+	  weekday until strictly after now.
 
 Static reminders and templates don't involve the scheduler. A static
 reminder is sent with `POST /api/staticreminders/<id>`.
@@ -272,11 +283,12 @@ that minute, the timer is cancelled. Otherwise MIND restores the backups
 and restarts again, so a typo can't lock you out.
 
 **Database import** (`POST /api/admin/database`) works the same way: the
-upload is validated, the current database is moved to
-`db/MIND_original.db`, the upload takes its place and MIND restarts with the
-`db_import` flag. Logging in as admin within a minute keeps the import;
-otherwise `revert_db_import(swap=True)` puts the original back. See BUG-08
-and BUG-16 for problems in this flow.
+upload is validated, the current database is copied to
+`db/MIND_original.db`, the upload is copied into the live database and MIND
+restarts with the `db_import` flag. Logging in as admin within a minute keeps
+the import; otherwise `revert_db_import(swap=True)` copies the original back.
+All copies use SQLite's backup API, never file moves, because the database
+runs in WAL mode with open connections (see BUG-16).
 
 **Database export** (`GET /api/admin/database`) runs `VACUUM INTO` a
 temporary file and streams it as `MIND_<date>.db`.
@@ -312,7 +324,7 @@ mkdir -p db
 python3 -m unittest discover -s ./tests -p '*.py'
 ```
 
-The suite has about 455 tests, runs in about 30 seconds and passes on
+The suite has about 470 tests, runs in about 30 seconds and passes on
 Python 3.8 to 3.13.
 
 | File | What it covers |
@@ -358,12 +370,13 @@ success" (which fails the run), and you remove the marker.
 
 ## 12. Known bugs
 
-Found during the audit. Each has at least one reproducing test (search for
-its ID in `tests/`).
+Found during the audit. Each had at least one reproducing test, marked
+`@known_bug`. **All 16 are fixed**, and those tests now guard against
+regressions (search for the bug ID in `tests/` to find them).
 
 ### BUG-01 — The scheduler stops for good after the soonest reminder is deleted or moved later
 
-*Severity: high.* `backend/reminders.py`, `find_next_reminder` and
+*Severity: high. Status: fixed.* `backend/reminders.py`, `find_next_reminder` and
 `__trigger_reminders`.
 
 When the soonest reminder is deleted or moved to a later time, the timer
@@ -385,7 +398,7 @@ they affect the armed reminder.
 
 ### BUG-02 — Users can link other users' notification services
 
-*Severity: high (security).* `Reminder.update`, `Templates.add` / `Template.update`,
+*Severity: high (security). Status: fixed.* `Reminder.update`, `Templates.add` / `Template.update`,
 `StaticReminders.add` / `StaticReminder.update`.
 
 Only `Reminders.add` and `test_reminder` check that a notification service
@@ -407,7 +420,7 @@ in one shared helper.
 
 ### BUG-03 — A failed save still writes part of the change
 
-*Severity: medium.* Same functions as BUG-02.
+*Severity: medium. Status: fixed.* Same functions as BUG-02.
 
 When linking fails (`IntegrityError` → `NotificationServiceNotFound`), the
 open transaction is neither rolled back nor finished. The teardown's
@@ -427,7 +440,7 @@ failure.
 
 ### BUG-04 — Reminders at the same time crash the trigger or are sent twice
 
-*Severity: medium.* `ReminderHandler.__trigger_reminders`.
+*Severity: medium. Status: fixed.* `ReminderHandler.__trigger_reminders`.
 
 Two separate problems, both when several reminders share a timestamp (for
 example two users who both picked 09:00):
@@ -453,7 +466,7 @@ before each use), and arm the next timer once, after the whole batch.
 
 ### BUG-05 — Monthly and yearly repeats drift
 
-*Severity: medium.* `_find_next_time`, the `while new_time <= current_time:
+*Severity: medium. Status: fixed.* `_find_next_time`, the `while new_time <= current_time:
 new_time += td` loop.
 
 Adding one month at a time clamps and then stays clamped: Jan 31 → Feb 28 →
@@ -467,7 +480,7 @@ accumulating.
 
 ### BUG-06 — Weekday repeats skip the first occurrence
 
-*Severity: low.* `_find_next_time`, `one_to_go = True`.
+*Severity: low. Status: fixed.* `_find_next_time`, `one_to_go = True`.
 
 The weekday loop always moves at least one step, even when the chosen
 start date is itself one of the selected weekdays. "Every day, starting
@@ -482,7 +495,7 @@ weekday.
 
 ### BUG-07 — Databases from version 5 or older can't be migrated
 
-*Severity: high.* `backend/db.py`, migration V5 → V6.
+*Severity: high. Status: fixed.* `backend/db.py`, migration V5 → V6.
 
 The step removes the old default account with `User('User1',
 'Password1').delete()`, but `User.__init__` now takes a single user ID. The
@@ -501,7 +514,7 @@ plain SQL in the migration.
 
 ### BUG-08 — Importing a non-SQLite file crashes
 
-*Severity: medium.* `backend/db.py`, `import_db`.
+*Severity: medium. Status: fixed.* `backend/db.py`, `import_db`.
 
 Only `OperationalError` is caught. A file that isn't a database raises
 `sqlite3.DatabaseError` (its parent class), and a `config` table without a
@@ -515,7 +528,7 @@ connection.
 
 ### BUG-09 — Wrong upload type reports the wrong error
 
-*Severity: low.* `frontend/input_validation.py`, `input_validation()`.
+*Severity: low. Status: fixed.* `frontend/input_validation.py`, `input_validation()`.
 
 `noted_var.__class__.__name__ == DatabaseFileVariable.__name__` compares
 the *metaclass* name (`ABCMeta`), so the branch never runs. Uploading
@@ -527,7 +540,7 @@ Tests: `test_wrong_file_type_is_invalid_database_file`,
 
 ### BUG-10 — Color validation accepts more than a color
 
-*Severity: low.* `color_regex = compile(r'#[0-9a-f]{6}')` used with
+*Severity: low. Status: fixed.* `color_regex = compile(r'#[0-9a-f]{6}')` used with
 `.search()`.
 
 The pattern isn't anchored, so `#abcdef00`, `x#abcdef` and
@@ -539,7 +552,7 @@ Test: `test_color_must_be_exactly_one_hex_code`.
 
 ### BUG-11 — The frontend checks for error names that don't exist
 
-*Severity: low.* `admin.js` (lines 82, 122) and `notification.js` (line 174)
+*Severity: low. Status: fixed.* `admin.js` (lines 82, 122) and `notification.js` (line 174)
 compare against `ApiKeyInvalid` / `ApiKeyExpired`. The API sends
 `APIKeyInvalid` / `APIKeyExpired`, so an expired session in those places
 doesn't send you back to the login page.
@@ -548,7 +561,7 @@ error name the JS compares against).
 
 ### BUG-12 — The library search query isn't URL-encoded
 
-*Severity: low.* `library.js` line 109: `&query=${query}`.
+*Severity: low. Status: fixed.* `library.js` line 109: `&query=${query}`.
 
 Searching for `a&b`, `50%` or `#1` sends a broken query (`&` starts a new
 parameter, `#` cuts the URL).
@@ -558,7 +571,7 @@ Test: `test_search_query_is_url_encoded`.
 
 ### BUG-13 — `NaN` / `Infinity` times crash
 
-*Severity: low.* Python's JSON parser accepts `NaN` and `Infinity`.
+*Severity: low. Status: fixed.* Python's JSON parser accepts `NaN` and `Infinity`.
 `TimeVariable` accepts any float, and `round(nan)` then raises, giving a
 500. Tests: `test_time_rejects_non_finite`,
 `test_non_finite_time_is_rejected`.
@@ -567,7 +580,7 @@ Test: `test_search_query_is_url_encoded`.
 
 ### BUG-14 — Deleting an account leaves its other sessions alive
 
-*Severity: medium.* `frontend/api.py`, `api_manage_user` (DELETE) and
+*Severity: medium. Status: fixed.* `frontend/api.py`, `api_manage_user` (DELETE) and
 `api_admin_user` (DELETE).
 
 Self-deletion only removes the API key that made the request. Admin
@@ -581,7 +594,7 @@ Tests: `test_delete_account_invalidates_all_sessions`,
 
 ### BUG-15 — The "add notification service" list crashes with current Apprise
 
-*Severity: high.* `backend/notification_service.py`,
+*Severity: high. Status: fixed.* `backend/notification_service.py`,
 `get_apprise_services()`.
 
 `requirements.txt` allows `apprise~=1.4`, i.e. any 1.x. Newer versions
@@ -595,7 +608,7 @@ Test: `test_frozenset_choices_are_serialisable`.
 
 ### BUG-16 — Database import moves the file without its WAL files
 
-*Severity: high.* `backend/db.py`, `import_db` / `revert_db_import`.
+*Severity: high. Status: fixed.* `backend/db.py`, `import_db` / `revert_db_import`.
 
 The database runs in WAL mode, so recent writes live in `MIND.db-wal`, and
 `MIND.db-shm` indexes them. The import renames only the main files while
@@ -627,11 +640,12 @@ Not bugs as such, but worth knowing.
 - **`BaseEnum` members are unhashable.** Overriding `__eq__` without
   `__hash__` sets `__hash__` to `None`, so sorting methods and repeat
   quantities can't be used in sets or as dict keys.
-- **Timer threads never close their database connection.** Every trigger
-  runs in a new thread with its own connection. The leak is bounded only
-  because the OS reuses thread IDs, which happen to be the cache key.
-- **`set_log_level(DEBUG)` leaks a file handle** each time: `setStream()`
-  returns the previous stream, which is never closed.
+- **Timer threads didn't close their database connection** (fixed). Every
+  trigger runs in a new thread with its own connection. The leak was
+  bounded only because the OS reuses thread IDs, which happen to be the
+  cache key.
+- **`set_log_level(DEBUG)` leaked a file handle** each time (fixed):
+  `setStream()` returns the previous stream, which was never closed.
 - **One Apprise template can't be built from the UI.** ntfy's
   `{schema}://{topic}`: `topic` is folded into the `targets` list token, so
   the form never offers it by itself. Its other templates work.
@@ -646,8 +660,8 @@ Not bugs as such, but worth knowing.
   web-UI always sends everything, so it's only visible to API users.
 - **`weekdays` accepts duplicates** (`[1, 1]` is stored as `"1,1"`).
   Harmless.
-- **The log line in `Reminder.update`** says "Updating notification
-  service" instead of "Updating reminder".
+- **The log line in `Reminder.update`** said "Updating notification
+  service" instead of "Updating reminder" (fixed).
 - **"Works cross-timezone" (README)** only holds when the server's `TZ`
   matches the users' timezone, see [section 7](#7-the-time-model).
 

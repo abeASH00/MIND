@@ -9,6 +9,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 import logging
+from math import isfinite
 from os.path import splitext
 from re import compile
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, Union
@@ -276,7 +277,8 @@ class TimeVariable(BaseInputVariable):
 	related_exceptions = [KeyNotFound, InvalidKeyValue, InvalidTime]
 
 	def validate(self) -> bool:
-		return isinstance(self.value, (float, int))
+		# JSON allows NaN and Infinity, which aren't valid times
+		return isinstance(self.value, (float, int)) and isfinite(self.value)
 
 
 class EditTimeVariable(NonRequiredVersion, TimeVariable):
@@ -385,7 +387,7 @@ class ColorVariable(NonRequiredVersion, BaseInputVariable):
 	def validate(self) -> bool:
 		return self.value is None or (
 			isinstance(self.value, str)
-			and color_regex.search(self.value)
+			and color_regex.fullmatch(self.value)
 		)
 
 
@@ -546,7 +548,7 @@ def input_validation() -> Union[None, Dict[str, Any]]:
 		value: InputVariable = noted_var(input_value)
 
 		if not value.validate():
-			if noted_var.__class__.__name__ == DatabaseFileVariable.__name__:
+			if noted_var is DatabaseFileVariable:
 				raise InvalidDatabaseFile
 			elif noted_var.source == DataSource.FILES:
 				raise InvalidKeyValue(noted_var.name, input_value.filename)

@@ -10,8 +10,7 @@ import re
 import unittest
 from unittest import mock
 
-from _harness import (DEFAULT_URL, OTHER_URL, RECORDER, MindTestCase, future,
-                      known_bug)
+from _harness import DEFAULT_URL, OTHER_URL, RECORDER, MindTestCase, future
 
 from backend.custom_exceptions import (NotificationServiceInUse,
                                        NotificationServiceNotFound)
@@ -78,6 +77,11 @@ class Test_AppriseServices(unittest.TestCase):
 
 	def test_many_services(self):
 		self.assertGreater(len(self.services), 50)
+
+	def test_json_serialisable(self):
+		# BUG-15: newer Apprise versions use frozensets for some values
+		import json
+		json.dumps(self.services)
 
 	def test_structure(self):
 		for service in self.services:
@@ -169,7 +173,6 @@ class Test_AppriseServicesSerialisation(unittest.TestCase):
 		}]
 	}
 
-	@known_bug('BUG-15')
 	def test_frozenset_choices_are_serialisable(self):
 		import json
 		with mock.patch('backend.notification_service.Apprise') as apprise:
@@ -330,9 +333,9 @@ class Test_ServiceInUse(ServicesTestCase):
 		self.assertEqual(self.handler.time, soon)
 		with self.ctx():
 			self.services().fetchone(self.used).delete(delete_reminders_using=True)
-		# The reminder that the scheduler waited for is gone. The scheduler
-		# keeps waiting for it (BUG-01); this only pins that nothing crashes.
-		self.assertIsNotNone(self.handler.thread)
+		# The reminder the scheduler waited for is gone: it moves on
+		later = self.sql("SELECT time FROM reminders;")[0][0]
+		self.assertEqual(self.handler.time, later)
 
 
 if __name__ == '__main__':

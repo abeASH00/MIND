@@ -106,7 +106,7 @@ function fillLibrary(type=null) {
 	const sorting = getSorting(tab_type);
 	const query = LibEls.search_bar.input.value;
 	if (query)
-		url = `${url}/search?api_key=${api_key}&sort_by=${sorting}&query=${query}`;
+		url = `${url}/search?api_key=${api_key}&sort_by=${sorting}&query=${encodeURIComponent(query)}`;
 	else
 		url = `${url}?api_key=${api_key}&sort_by=${sorting}`;
 

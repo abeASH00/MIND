@@ -79,7 +79,7 @@ function submitSettings() {
 			return Promise.reject(json)
 	})
 	.catch(json => {
-		if (['ApiKeyInvalid', 'ApiKeyExpired'].includes(json.error))
+		if (['APIKeyInvalid', 'APIKeyExpired'].includes(json.error))
 			window.location.href = `${url_prefix}/`;
 	});
 };
@@ -119,7 +119,7 @@ function submitHostingSettings() {
 		)
 	})
 	.catch(json => {
-		if (['ApiKeyInvalid', 'ApiKeyExpired'].includes(json.error))
+		if (['APIKeyInvalid', 'APIKeyExpired'].includes(json.error))
 			window.location.href = `${url_prefix}/`;
 	});
 };

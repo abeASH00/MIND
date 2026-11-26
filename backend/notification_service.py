@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 
 from re import compile
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 from apprise import Apprise
 
@@ -12,6 +12,51 @@ from backend.helpers import when_not_none
 from backend.logging import LOGGER
 
 remove_named_groups = compile(r'(?<=\()\?P<\w+>')
+
+def check_notification_services(
+	user_id: int,
+	notification_services: Iterable[int]
+) -> None:
+	"""Check that notification services exist and are owned by the user.
+
+	Args:
+		user_id (int): The ID of the user.
+		notification_services (Iterable[int]): The IDs of the services.
+
+	Raises:
+		NotificationServiceNotFound: One of the services doesn't exist or is
+		owned by another user.
+	"""
+	cursor = get_db()
+	for service in notification_services:
+		if not cursor.execute("""
+			SELECT 1
+			FROM notification_services
+			WHERE id = ?
+				AND user_id = ?
+			LIMIT 1;
+			""",
+			(service, user_id)
+		).fetchone():
+			raise NotificationServiceNotFound
+	return
+
+def _to_list(values: Union[Iterable[Any], None]) -> Union[List[Any], None]:
+	"""Turn the allowed values of an Apprise token into a JSON serialisable
+	list. Newer Apprise versions use (frozen)sets, which are sorted to keep
+	the order stable.
+
+	Args:
+		values (Union[Iterable[Any], None]): The values.
+
+	Returns:
+		Union[List[Any], None]: The values as a list, or `None`.
+	"""
+	if values is None:
+		return None
+	if isinstance(values, (set, frozenset)):
+		return sorted(values, key=str)
+	return list(values)
 
 def process_regex(regex: Union[List[str], None]) -> Union[None, List[str]]:
 	return when_not_none(
@@ -42,7 +87,7 @@ def get_apprise_services() -> List[Dict[str, Union[str, Dict[str, list]]]]:
 			'name': str(entry['service_name']),
 			'doc_url': entry['setup_url'],
 			'details': {
-				'templates': entry['details']['templates'],
+				'templates': list(entry['details']['templates']),
 				'tokens': [],
 				'args': []
 			}
@@ -54,7 +99,7 @@ def get_apprise_services() -> List[Dict[str, Union[str, Dict[str, list]]]]:
 			'map_to': 'schema',
 			'required': schema['required'],
 			'type': 'choice',
-			'options': schema['values'],
+			'options': _to_list(schema['values']),
 			'default': schema.get('default')
 		})
 
@@ -100,7 +145,7 @@ def get_apprise_services() -> List[Dict[str, Union[str, Dict[str, list]]]]:
 				'required': v['required'],
 				'type': v['type'].split(':')[0],
 				**({
-					'options': v.get('values'),
+					'options': _to_list(v.get('values')),
 					'default': v.get('default')
 				} if v['type'].startswith('choice') else {
 					'prefix': v.get('prefix'),
@@ -128,7 +173,7 @@ def get_apprise_services() -> List[Dict[str, Union[str, Dict[str, list]]]]:
 					'delim': v['delim'][0],
 					'content': []
 				} if v['type'].startswith('list') else {
-					'options': v['values'],
+					'options': _to_list(v['values']),
 					'default': v.get('default')
 				} if v['type'].startswith('choice') else {
 					'default': v['default']
@@ -332,6 +377,11 @@ class NotificationService:
 			"DELETE FROM notification_services WHERE id = ?",
 			(self.id,)
 		)
+
+		if delete_reminders_using:
+			# Reminders may have been deleted, maybe the soonest one
+			from backend.reminders import ReminderHandler
+			ReminderHandler().find_next_reminder()
 		return
 
 class NotificationServices:

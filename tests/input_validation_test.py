@@ -14,7 +14,7 @@ from unittest import mock
 
 from werkzeug.datastructures import FileStorage
 
-from _harness import MindTestCase, known_bug
+from _harness import MindTestCase
 
 import frontend.input_validation as iv
 from backend.custom_exceptions import (InvalidDatabaseFile, InvalidKeyValue,
@@ -124,7 +124,6 @@ class Test_Variables(unittest.TestCase):
 		# rejected later as InvalidTime.
 		self.assertTrue(valid(iv.TimeVariable, True))
 
-	@known_bug('BUG-13')
 	def test_time_rejects_non_finite(self):
 		for bad in (float('nan'), float('inf'), float('-inf')):
 			self.assertFalse(valid(iv.TimeVariable, bad), bad)
@@ -175,7 +174,6 @@ class Test_Variables(unittest.TestCase):
 		for bad in ('#ABCDEF', '#abc', 'abcdef', '', 123, '#ghijkl'):
 			self.assertFalse(valid(iv.ColorVariable, bad), bad)
 
-	@known_bug('BUG-10')
 	def test_color_must_be_exactly_one_hex_code(self):
 		for bad in ('#abcdef00', 'x#abcdef', '#abcdef;background:url(x)', ' #abcdef', '#abcdef\n'):
 			self.assertFalse(valid(iv.ColorVariable, bad), repr(bad))
@@ -449,7 +447,6 @@ class Test_InputValidation(MindTestCase):
 			)
 		self.assertEqual(cm.exception.key, 'file')
 
-	@known_bug('BUG-09')
 	def test_wrong_file_type_is_invalid_database_file(self):
 		with self.assertRaises(InvalidDatabaseFile):
 			self.parse(
@@ -457,22 +454,6 @@ class Test_InputValidation(MindTestCase):
 				data={'file': (io.BytesIO(b'x'), 'backup.txt')},
 				content_type='multipart/form-data'
 			)
-
-	def test_wrong_file_type_currently_reports_invalid_key_value(self):
-		# Pins the current behaviour behind BUG-09: the dedicated branch in
-		# input_validation() compares the metaclass name and never matches.
-		try:
-			self.parse(
-				'/api/admin/database?copy_hosting_settings=true', method='POST',
-				data={'file': (io.BytesIO(b'x'), 'backup.txt')},
-				content_type='multipart/form-data'
-			)
-		except InvalidKeyValue as e:
-			self.assertEqual((e.key, e.value), ('file', 'backup.txt'))
-		except InvalidDatabaseFile:
-			pass # Fixed
-		else:
-			self.fail('Expected an error')
 
 
 if __name__ == '__main__':

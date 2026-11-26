@@ -10,7 +10,7 @@ import os
 import re
 import unittest
 
-from _harness import MindTestCase, known_bug
+from _harness import MindTestCase
 
 import backend.custom_exceptions as ce
 from backend.helpers import folder_path
@@ -68,7 +68,6 @@ class Test_ErrorNames(unittest.TestCase):
 		self.assertIn('UsernameTaken', names)
 		self.assertIn('NotificationServiceInUse', names)
 
-	@known_bug('BUG-11')
 	def test_frontend_only_checks_for_existing_errors(self):
 		known = backend_error_names()
 		unknown = sorted({
@@ -105,7 +104,6 @@ class Test_ApiUrls(MindTestCase):
 					checked += 1
 		self.assertGreater(checked, 25)
 
-	@known_bug('BUG-12')
 	def test_search_query_is_url_encoded(self):
 		source = read(os.path.join(JS_DIR, 'library.js'))
 		self.assertRegex(source, r'query=\$\{encodeURIComponent\(query\)\}')

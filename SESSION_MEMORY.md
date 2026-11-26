@@ -17,7 +17,7 @@ reminder app):
 2. Write an exhaustive test suite.
 3. Hunt bugs and prove each with a reproducing test.
 4. Write a "codebase atlas" (architecture + bug report).
-5. Fix the bugs. *(in progress, see status)*
+5. Fix the bugs.
 
 ### Status
 
@@ -27,7 +27,7 @@ reminder app):
 | Test harness + 455 tests (was 11) | done, commit `f2af902` |
 | 16 bugs reproduced with `@known_bug` tests | done |
 | Codebase atlas `docs/other_docs/codebase_atlas.md` (+ mkdocs nav entry) | done |
-| Fix bugs | not started |
+| Fix all 16 bugs (markers removed, regression tests added, 467 tests green on 3.8/3.11/3.13) | done |
 | Browser end-to-end tests (Playwright) | idea, not started |
 
 Branch: `ccr-a5821806-a7lub3` (pushed to origin).
@@ -81,9 +81,14 @@ python3 -m unittest discover -s ./tests -p '*.py'
 - `pip install -r requirements.txt` needed `--ignore-installed blinker` in
   the cloud container (blinker was installed by Debian).
 
+### Scheduled check-ins (set up by the user's request)
+
+The user said: "If token full usage, continue back at 3:30am then stop at
+7am" (timezone UTC+8). Two one-shot scheduled messages fire into this
+session: resume at 2026-11-28 03:30 UTC+8 and stop at 07:00 UTC+8.
+
 ### Next steps (for a future session)
 
-1. Fix the bugs one by one; remove `@known_bug` markers as they pass.
-2. Optional: Playwright browser tests of the web UI (Chromium is
+1. Optional: Playwright browser tests of the web UI (Chromium is
    pre-installed in the cloud container).
-3. Optional: open a PR (only if the user asks).
+2. Optional: open a PR (only if the user asks).

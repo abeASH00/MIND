@@ -3,6 +3,7 @@
 import logging
 import logging.config
 from os.path import exists
+from sys import stderr, stdout
 from typing import Any
 
 from backend.helpers import folder_path
@@ -134,8 +135,15 @@ def set_log_level(
 			else:
 				open(file, "x").close()
 
-		stream_handler.setStream(
+		old_stream = stream_handler.setStream(
 			open(file, "a")
 		)
+		if (
+			old_stream is not None
+			and hasattr(old_stream, 'close')
+			and old_stream not in (stdout, stderr)
+		):
+			# Don't leak the previous debug log file handle
+			old_stream.close()
 
 	return

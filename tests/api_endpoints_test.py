@@ -14,9 +14,8 @@ import unittest
 from unittest import mock
 
 from _harness import (DEFAULT_URL, OTHER_URL, RECORDER, MindTestCase, future,
-                      known_bug, mind_now)
+                      mind_now)
 
-from backend.db import DBConnection
 from backend.helpers import RestartVars
 from backend.server import SERVER
 
@@ -280,7 +279,6 @@ class Test_UserEndpoints(MindTestCase):
 		)
 		self.assertEqual(self.sql("SELECT COUNT(*) FROM reminders;"), [(0,)])
 
-	@known_bug('BUG-14')
 	def test_delete_account_invalidates_all_sessions(self):
 		self.create_user('alice')
 		k1 = self.login('alice', 'password')
@@ -288,17 +286,13 @@ class Test_UserEndpoints(MindTestCase):
 		self.api('DELETE', '/user', k1)
 		self.assertApiError(self.api('GET', '/auth/status', k2), 'APIKeyInvalid', 401)
 
-	def test_stale_session_after_account_deletion_crashes(self):
-		# Pins the impact of BUG-14: a second session of a deleted account
-		# keeps working until it tries to write, which then crashes (500).
+	def test_delete_account_keeps_other_users_sessions(self):
 		self.create_user('alice')
-		k1 = self.login('alice', 'password')
-		k2 = self.login('alice', 'password')
-		self.api('DELETE', '/user', k1)
-		code, body = self.api('POST', '/notificationservices', k2, json={'title': 'x', 'url': DEFAULT_URL})
-		if code == 401:
-			return # BUG-14 fixed
-		self.assertInternalError((code, body))
+		self.create_user('bob')
+		alice = self.login('alice', 'password')
+		bob = self.login('bob', 'password')
+		self.api('DELETE', '/user', alice)
+		self.assertEqual(self.api('GET', '/auth/status', bob)[0], 200)
 
 
 class Test_NotificationServiceEndpoints(MindTestCase):
@@ -379,6 +373,13 @@ class Test_NotificationServiceEndpoints(MindTestCase):
 		with mock.patch('frontend.api.get_apprise_services', return_value=catalogue):
 			code, body = self.api('GET', '/notificationservices/available', self.key)
 		self.assertEqual((code, body['result']), (200, catalogue))
+
+	def test_available_with_real_apprise(self):
+		# BUG-15: the real catalogue must survive JSON serialisation
+		code, body = self.api('GET', '/notificationservices/available', self.key)
+		self.assertEqual(code, 200)
+		self.assertEqual(body['result'][0]['name'], 'Custom URL')
+		self.assertGreater(len(body['result']), 50)
 
 	def test_available_requires_login(self):
 		self.assertApiError(self.api('GET', '/notificationservices/available'), 'APIKeyInvalid', 401)
@@ -526,7 +527,7 @@ class Test_ReminderEndpoints(MindTestCase):
 				'ReminderNotFound', 404
 			)
 		# Bob can't use Alice's service when adding
-		other_service = self.add_service(other)
+		self.add_service(other)
 		self.assertApiError(
 			self.api('POST', '/reminders', other, json={
 				'title': 'x', 'time': future(), 'notification_services': [self.service]
@@ -540,7 +541,6 @@ class Test_ReminderEndpoints(MindTestCase):
 			'NotificationServiceNotFound', 404
 		)
 
-	@known_bug('BUG-02')
 	def test_cannot_attach_other_users_service_on_update(self):
 		other = self.user_key('bob')
 		other_service = self.add_service(other)
@@ -554,7 +554,6 @@ class Test_ReminderEndpoints(MindTestCase):
 			'NotificationServiceNotFound', 404
 		)
 
-	@known_bug('BUG-13')
 	def test_non_finite_time_is_rejected(self):
 		for literal in ('NaN', 'Infinity', '-Infinity'):
 			with self.subTest(literal=literal):
@@ -733,7 +732,6 @@ class Test_AdminEndpoints(MindTestCase):
 		self.assertEqual(self.api('PUT', '/admin/users/1', self.admin, json={'new_password': 'better'})[0], 200)
 		self.login('admin', 'better')
 
-	@known_bug('BUG-14')
 	def test_admin_delete_user_invalidates_all_sessions(self):
 		self.create_user('alice')
 		k1 = self.login('alice', 'password')
@@ -803,7 +801,6 @@ class Test_AdminEndpoints(MindTestCase):
 		)
 		self.assertEqual(response.get_json()['error'], 'KeyNotFound')
 
-	@known_bug('BUG-08')
 	def test_upload_garbage_file(self):
 		self._patch('frontend.input_validation.folder_path', lambda *p: os.path.join(self.tmp_dir, *p[1:]))
 		response = self.client.post(
@@ -816,7 +813,6 @@ class Test_AdminEndpoints(MindTestCase):
 		self.assertEqual(response.get_json()['error'], 'InvalidDatabaseFile')
 		self.assertFalse(os.path.exists(os.path.join(self.tmp_dir, 'MIND_upload.db')))
 
-	@known_bug('BUG-09')
 	def test_upload_wrong_extension(self):
 		response = self.client.post(
 			'/api/admin/database',

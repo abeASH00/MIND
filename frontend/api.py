@@ -69,6 +69,19 @@ class ApiKeyEntry:
 users = Users()
 api_key_map: Dict[int, ApiKeyEntry] = {}
 
+def forget_user_sessions(user_id: int) -> None:
+	"""Invalidate all API keys of a user, e.g. after deleting the account.
+
+	Args:
+		user_id (int): The ID of the user.
+	"""
+	for key in [
+		k for k, v in api_key_map.items()
+		if v.user_data.user_id == user_id
+	]:
+		api_key_map.pop(key, None)
+	return
+
 def return_api(
 	result: Any,
 	error: Optional[str] = None,
@@ -263,7 +276,7 @@ def api_manage_user(inputs: Dict[str, str]):
 	
 	elif request.method == 'DELETE':
 		user.delete()
-		api_key_map.pop(g.hashed_api_key)
+		forget_user_sessions(user.user_id)
 		return return_api({})
 
 #===================
@@ -802,10 +815,7 @@ def api_admin_user(inputs: Dict[str, Any], u_id: int):
 	
 	elif request.method == 'DELETE':
 		user.delete()
-		for key, value in api_key_map.items():
-			if value.user_data.user_id == u_id:
-				del api_key_map[key]
-				break
+		forget_user_sessions(u_id)
 		return return_api({})
 
 @admin_api.route(

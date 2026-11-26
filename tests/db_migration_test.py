@@ -6,23 +6,21 @@ released database version, and importing/reverting database files.
 """
 
 import os
-import shutil
 import sqlite3
 import threading
 import time
 import unittest
-from datetime import datetime
 from typing import Dict, Set
 from unittest import mock
 
-from _harness import (DEFAULT_URL, WAL_SURVIVES_CLOSE, MindTestCase,
-                      close_thread_connection, future, known_bug)
+from _harness import (DEFAULT_URL, MindTestCase, close_thread_connection,
+                      future)
 from _legacy_schemas import LEGACY_SCHEMAS, SINGLE_SERVICE_TABLES
 
 from backend.custom_exceptions import InvalidDatabaseFile
 from backend.db import (__DATABASE_VERSION__, __DATEBASE_NAME_ORIGINAL__,
-                        DB_Singleton, DBConnection, close_db, get_db,
-                        import_db, revert_db_import, setup_db)
+                        DBConnection, close_db, get_db, import_db,
+                        revert_db_import, setup_db)
 from backend.helpers import RestartVars
 from backend.security import generate_salt_hash
 from backend.settings import default_settings, get_setting, set_setting
@@ -109,7 +107,8 @@ class Test_Connection(MindTestCase):
 		# The cursor is shared within a context, so asking for a tuple cursor
 		# changes the row type of a dict cursor obtained earlier. Code that
 		# keeps iterating an older cursor after calling get_db() again gets
-		# tuples. This is the root cause of BUG-04.
+		# tuples. This was the root cause of BUG-04: fetch rows with
+		# fetchall() before running other queries.
 		with self.ctx():
 			dict_cursor = get_db(dict)
 			get_db()
@@ -380,30 +379,42 @@ class Test_Migration(LegacyDatabaseMixin, MindTestCase):
 			alice.static_reminders.add('New static', [1])
 			alice.templates.add('New template', [1])
 
-	@known_bug('BUG-07')
 	def test_migrate_from_v1(self):
 		self.migrate_from(1)
 		self.check_migrated(1)
 
-	@known_bug('BUG-07')
 	def test_migrate_from_v2(self):
 		self.migrate_from(2)
 		self.check_migrated(2)
 
-	@known_bug('BUG-07')
 	def test_migrate_from_v3(self):
 		self.migrate_from(3)
 		self.check_migrated(3)
 
-	@known_bug('BUG-07')
 	def test_migrate_from_v4(self):
 		self.migrate_from(4)
 		self.check_migrated(4)
 
-	@known_bug('BUG-07')
 	def test_migrate_from_v5(self):
 		self.migrate_from(5)
 		self.check_migrated(5)
+
+	def test_migrate_keeps_user1_with_changed_password(self):
+		# V5 -> V6 only removes User1 if it still has the default password
+		self.build_legacy_db(5, DBConnection.file)
+		from backend.security import get_hash
+		con = sqlite3.connect(DBConnection.file)
+		salt = con.execute("SELECT salt FROM users WHERE username = 'User1';").fetchone()[0]
+		con.execute(
+			"UPDATE users SET hash = ? WHERE username = 'User1';",
+			(get_hash(salt, 'changed'),)
+		)
+		con.commit()
+		con.close()
+		with self.ctx():
+			setup_db()
+			self.assertIn('User1', Users())
+			Users().login('User1', 'changed')
 
 	def test_migrate_from_v6(self):
 		self.migrate_from(6)
@@ -527,7 +538,6 @@ class Test_ImportDB(LegacyDatabaseMixin, MindTestCase):
 			self.assertIn('imported', Users())
 			self.assertEqual(get_setting('port'), 5555)
 
-	@known_bug('BUG-16', when=WAL_SURVIVES_CLOSE)
 	def test_import_copies_hosting_settings(self):
 		self.make_mind_db(self.upload_path(), port=5555)
 		with self.ctx():
@@ -543,7 +553,6 @@ class Test_ImportDB(LegacyDatabaseMixin, MindTestCase):
 			self.assertEqual(get_setting('port'), 1111)
 			self.assertEqual(get_setting('url_prefix'), '/here')
 
-	@known_bug('BUG-16')
 	def test_import_survives_writes_during_restart_window(self):
 		# After an import MIND restarts after one second. Requests that are
 		# still being served in that window write to the live connection.
@@ -564,7 +573,6 @@ class Test_ImportDB(LegacyDatabaseMixin, MindTestCase):
 		self.assertIn('imported', usernames)
 		self.assertNotIn('original_only', usernames)
 
-	@known_bug('BUG-16', when=WAL_SURVIVES_CLOSE)
 	def test_import_leaves_no_stray_upload_files(self):
 		self.make_mind_db(self.upload_path())
 		with self.ctx():
@@ -608,7 +616,6 @@ class Test_ImportDB(LegacyDatabaseMixin, MindTestCase):
 				import_db(self.upload_path(), False)
 		self.assertFalse(os.path.exists(self.upload_path()))
 
-	@known_bug('BUG-08')
 	def test_import_non_sqlite_file_rejected(self):
 		with open(self.upload_path(), 'wb') as f:
 			f.write(b'definitely not a database ' * 200)
@@ -617,7 +624,6 @@ class Test_ImportDB(LegacyDatabaseMixin, MindTestCase):
 				import_db(self.upload_path(), False)
 		self.assertFalse(os.path.exists(self.upload_path()))
 
-	@known_bug('BUG-08')
 	def test_import_without_version_row_rejected(self):
 		con = sqlite3.connect(self.upload_path())
 		con.execute("CREATE TABLE config(key VARCHAR(255) PRIMARY KEY, value BLOB NOT NULL);")
@@ -638,15 +644,49 @@ class Test_ImportDB(LegacyDatabaseMixin, MindTestCase):
 
 	def test_revert_swap_back(self):
 		original = os.path.join(self.tmp_dir, __DATEBASE_NAME_ORIGINAL__)
+		self.make_mind_db(original, extra_user='from_original')
+		self.create_user('imported_user')
 		close_thread_connection()
-		shutil.copy(DBConnection.file, original)
-		with open(DBConnection.file, 'w') as f:
-			f.write('imported')
 		revert_db_import(swap=True)
 		self.assertFalse(os.path.exists(original))
 		con = sqlite3.connect(DBConnection.file)
-		self.assertEqual(con.execute("SELECT username FROM users;").fetchall(), [('admin',)])
+		self.assertEqual(
+			sorted(r[0] for r in con.execute("SELECT username FROM users;")),
+			['admin', 'from_original']
+		)
 		con.close()
+
+	def test_import_then_revert_restores_original(self):
+		self.make_mind_db(self.upload_path(), extra_user='imported')
+		self.create_user('original_user')
+		with self.ctx():
+			import_db(self.upload_path(), copy_hosting_settings=False)
+		close_thread_connection()
+		with self.ctx():
+			self.assertIn('imported', Users())
+			self.assertNotIn('original_user', Users())
+		close_thread_connection()
+
+		# Nobody logged in within a minute: MIND reverts before restarting
+		revert_db_import(swap=True)
+		with self.ctx():
+			self.assertIn('original_user', Users())
+			self.assertNotIn('imported', Users())
+		self.assertFalse(os.path.exists(os.path.join(self.tmp_dir, __DATEBASE_NAME_ORIGINAL__)))
+
+	def test_import_then_keep(self):
+		# The admin logged in within a minute: the backup is removed
+		self.make_mind_db(self.upload_path(), extra_user='imported')
+		with self.ctx():
+			import_db(self.upload_path(), copy_hosting_settings=False)
+		revert_db_import(swap=False)
+		self.assertEqual(
+			[f for f in os.listdir(self.tmp_dir) if f.startswith('MIND_original')],
+			[]
+		)
+		close_thread_connection()
+		with self.ctx():
+			self.assertIn('imported', Users())
 
 	def test_revert_explicit_file(self):
 		other = os.path.join(self.tmp_dir, 'other.db')

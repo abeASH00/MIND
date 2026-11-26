@@ -8,7 +8,7 @@ from backend.custom_exceptions import (AccessUnauthorized,
 from backend.db import get_db
 from backend.logging import LOGGER
 from backend.notification_service import NotificationServices
-from backend.reminders import Reminders
+from backend.reminders import ReminderHandler, Reminders
 from backend.security import generate_salt_hash, get_hash
 from backend.settings import get_setting
 from backend.static_reminders import StaticReminders
@@ -129,6 +129,9 @@ class User:
 			"DELETE FROM users WHERE id = ?",
 			(self.user_id,)
 		)
+
+		# The soonest reminder might have belonged to this user
+		ReminderHandler().find_next_reminder()
 		return
 
 class Users:

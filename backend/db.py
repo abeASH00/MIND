@@ -6,17 +6,16 @@ Setting up and interacting with the database.
 
 from datetime import datetime
 from os import makedirs, remove
-from os.path import dirname, isfile, join
+from os.path import dirname, exists, isfile, join
 from shutil import move
-from sqlite3 import Connection, OperationalError, ProgrammingError, Row
+from sqlite3 import Connection, DatabaseError, ProgrammingError, Row
 from threading import current_thread, main_thread
 from time import time
 from typing import Type, Union
 
 from flask import g
 
-from backend.custom_exceptions import (AccessUnauthorized, InvalidDatabaseFile,
-                                       UserNotFound)
+from backend.custom_exceptions import InvalidDatabaseFile
 from backend.helpers import RestartVars, folder_path
 from backend.logging import LOGGER, set_log_level
 
@@ -213,12 +212,25 @@ def migrate_db(current_db_version: int) -> None:
 
 	if current_db_version == 5:
 		# V5 -> V6
-		from backend.users import User
-		try:
-			User('User1', 'Password1').delete()
-		except (UserNotFound, AccessUnauthorized):
-			pass
-		
+		# Remove the default account of early versions, if it still has its
+		# default password. Plain SQL: the `User` class needs columns that
+		# only exist from later versions on.
+		from backend.security import get_hash
+
+		user = cursor.execute(
+			"SELECT id, salt, hash FROM users WHERE username = 'User1' LIMIT 1;"
+		).fetchone()
+		if user is not None and get_hash(user[1], 'Password1') == user[2]:
+			for table in (
+				'reminders', 'templates', 'static_reminders',
+				'notification_services'
+			):
+				cursor.execute(
+					f"DELETE FROM {table} WHERE user_id = ?;",
+					(user[0],)
+				)
+			cursor.execute("DELETE FROM users WHERE id = ?;", (user[0],))
+
 		current_db_version = 6
 
 	if current_db_version == 6:
@@ -414,6 +426,42 @@ def setup_db() -> None:
 
 	return
 
+def _remove_db_file(filepath: str) -> None:
+	"""Remove a database file and the WAL files that belong to it.
+
+	Args:
+		filepath (str): The path to the database file.
+	"""
+	for path in (filepath, filepath + '-wal', filepath + '-shm'):
+		if exists(path):
+			remove(path)
+	return
+
+def _copy_db(source_file: str, target: Union[Connection, str]) -> None:
+	"""Copy a database into another one using SQLite's backup API.
+
+	Unlike moving files around, this is safe while the target is in use and
+	in WAL mode: SQLite keeps the database and its -wal/-shm files together.
+
+	Args:
+		source_file (str): The path to the database to copy.
+		target (Union[Connection, str]): The connection to, or path of, the
+		database to overwrite.
+	"""
+	source = Connection(source_file, timeout=20.0)
+	target_connection = (
+		target
+		if isinstance(target, Connection) else
+		Connection(target, timeout=20.0)
+	)
+	try:
+		source.backup(target_connection)
+	finally:
+		source.close()
+		if target_connection is not target:
+			target_connection.close()
+	return
+
 def revert_db_import(
 	swap: bool,
 	imported_db_file: str = ''
@@ -427,20 +475,13 @@ def revert_db_import(
 		imported_db_file (str, optional): The other database file. Keep empty
 		to use `__DATABASE_NAME_ORIGINAL__`. Defaults to ''.
 	"""
-	original_db_file = DBConnection.file
 	if not imported_db_file:
 		imported_db_file = join(dirname(DBConnection.file), __DATEBASE_NAME_ORIGINAL__)
-	
+
 	if swap:
-		remove(original_db_file)
-		move(
-			imported_db_file,
-			original_db_file
-		)
+		_copy_db(imported_db_file, DBConnection.file)
 
-	else:
-		remove(imported_db_file)
-
+	_remove_db_file(imported_db_file)
 	return
 
 def import_db(
@@ -458,62 +499,62 @@ def import_db(
 		InvalidDatabaseFile: The new database file is invalid or unsupported.
 	"""
 	LOGGER.info(f'Importing new database; {copy_hosting_settings=}')
+	new_db = Connection(new_db_file, timeout=20.0)
 	try:
-		cursor = Connection(new_db_file, timeout=20.0).cursor()
+		try:
+			cursor = new_db.cursor()
+			database_version = cursor.execute(
+				"SELECT value FROM config WHERE key = 'database_version' LIMIT 1;"
+			).fetchone()
+			cursor.close()
+			if (
+				database_version is None
+				or not isinstance(database_version[0], int)
+			):
+				raise InvalidDatabaseFile
+			database_version = database_version[0]
 
-		database_version = cursor.execute(
-			"SELECT value FROM config WHERE key = 'database_version' LIMIT 1;"
-		).fetchone()[0]
-		if not isinstance(database_version, int):
+		except (DatabaseError, InvalidDatabaseFile):
+			LOGGER.error('Uploaded database is not a MIND database file')
 			raise InvalidDatabaseFile
 
-	except (OperationalError, InvalidDatabaseFile):
-		LOGGER.error('Uploaded database is not a MIND database file')
-		cursor.connection.close()
-		revert_db_import(
-			swap=False,
-			imported_db_file=new_db_file
-		)
-		raise InvalidDatabaseFile
+		if database_version > __DATABASE_VERSION__:
+			LOGGER.error('Uploaded database is higher version than this MIND installation can support')
+			raise InvalidDatabaseFile
 
-	if database_version > __DATABASE_VERSION__:
-		LOGGER.error('Uploaded database is higher version than this MIND installation can support')
-		revert_db_import(
-			swap=False,
-			imported_db_file=new_db_file
-		)
-		raise InvalidDatabaseFile
+		if copy_hosting_settings:
+			hosting_settings = get_db().execute("""
+				SELECT key, value, value
+				FROM config
+				WHERE key = 'host'
+					OR key = 'port'
+					OR key = 'url_prefix'
+				LIMIT 3;
+				"""
+			).fetchall()
+			new_db.executemany("""
+				INSERT INTO config(key, value)
+				VALUES (?, ?)
+				ON CONFLICT(key) DO
+				UPDATE
+				SET value = ?;
+				""",
+				hosting_settings
+			)
+			new_db.commit()
 
-	if copy_hosting_settings:
-		hosting_settings = get_db().execute("""
-			SELECT key, value, value
-			FROM config
-			WHERE key = 'host'
-				OR key = 'port'
-				OR key = 'url_prefix'
-			LIMIT 3;
-			"""
-		)
-		cursor.executemany("""
-			INSERT INTO config(key, value)
-			VALUES (?, ?)
-			ON CONFLICT(key) DO
-			UPDATE
-			SET value = ?;
-			""",
-			hosting_settings
-		)
-	cursor.connection.commit()
-	cursor.connection.close()
+		# Keep a copy of the current database for when the import is
+		# reverted, then copy the new database into the current one.
+		live_db: DBConnection = get_db().connection
+		live_db.commit()
+		original_db_file = join(dirname(DBConnection.file), __DATEBASE_NAME_ORIGINAL__)
+		_remove_db_file(original_db_file)
+		_copy_db(DBConnection.file, original_db_file)
+		new_db.backup(live_db)
 
-	move(
-		DBConnection.file,
-		join(dirname(DBConnection.file), __DATEBASE_NAME_ORIGINAL__)
-	)
-	move(
-		new_db_file,
-		DBConnection.file
-	)
+	finally:
+		new_db.close()
+		_remove_db_file(new_db_file)
 
 	from backend.server import SERVER
 	SERVER.restart([RestartVars.DB_IMPORT.value])
