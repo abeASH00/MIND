@@ -27,7 +27,7 @@ original chat (the "BUILD THIS APP ALL THE WAY TO DONE" brief).
 ## Progress (build order from the brief)
 - [x] Fonts bundled: fonts/ (Fraunces 600, DM Sans 400/500/700, OFL licences)
 - [x] css/app.css — full design system (light/dark, cards, nav, sheets, set rows, charts, calendar)
-- [~] 1. DONE: index.html, manifest.json, icons/ (PIL), sw.js, _headers, js/ui.js. TODO: js/app.js (router, nav, theme, SW register, onboarding)
+- [x] 1. index.html, manifest.json, icons/ (PIL), sw.js, _headers, js/ui.js, js/app.js (router with ctx, nav highlight, SW register + update toast, safety note on first open, persist request).
 - [x] 2. js/data.js — IndexedDB + backup export/import (done early; written before step 1)
 - [~] 3. DONE: js/exercise-data.js (46 exercises + warm-ups/cool-downs/rest-day ideas), js/figures.js (stick-figure poses). DONE js/exercises.js (loadExercises, getExercise, allExercises, partName, isFav, renderLibrary(ctx), renderExercise(ctx,id), exercisePicker, searchExercises; custom exercises; favourites; notes). Polish poses: one-arm row & hip thrust look off.
 - [x] 4. js/plans.js — 5 presets (seeded to DB via ensurePresets), builder, reorder/swap/remove, day edit, reset preset. Exports: ensurePresets, activePlan, dayFor, upcoming, dayParts, renderPlans(ctx), renderPlan(ctx,id), searchPlans, PRESETS. Imports from exercises.js: getExercise, allExercises, exercisePicker({title, part, exclude, onPick}) — exercises.js MUST export these.
@@ -54,4 +54,10 @@ icons/, fonts/
 - 2026-11-27 (chat 1): set up folder, fonts, CSS, data.js. Session restarted mid-build; paused at 7am MYT per user. Auto-resume scheduled 2026-11-28 03:30 MYT.
 - ui.js exports: esc, html`` (auto-escape tag), raw, safeUrl, linkify, $, $$, icon(name), toast, openSheet, confirmSheet, closeTopSheet, unit/toDisplay/fromDisplay/fmtW/fmtBig/fmtDur/fmtClock/dayKey/metaJoin, beep, buzz, unlockAudio, keepAwake, setupKeyboardHandling, downloadBlob, emptyState, avatarHTML, revealSelectedPills.
 - data.js exports: getSettings/saveSettings/settingsNow, getKV/setKV, saveActiveSync/getActive/clearActive, sessions/plans/custom/exmeta/body/measure/photos CRUD, exportBackup/importBackup/resetAll, requestPersist, uid.
-- NEXT: step 1 (index.html, manifest, icons via PIL, sw.js, app.js, ui.js), then 3 onward.
+- NEXT (app won't load until these exist — app.js imports them):
+  * js/home.js: renderHome(ctx) — search, hero (weekStreak), today/rest-day card, last session, 2 stat cards, coming up, quick tools, backup nudge, resume-workout card.
+  * js/workout.js: renderWorkout(ctx), restoreTimer(), startRest(sec,label) + global timer bar in #timer-slot (real-clock endAt in localStorage), active workout engine (saveActiveSync on every input), supersets, feel prompt, swap/add/remove, finish screen (newRecords), wake lock.
+  * js/progress.js: renderProgress(ctx, tab) — overview week/month, per-exercise charts, PB list, calendar, body weight, measurements, photos.
+  * js/tools.js: renderTool(ctx, name) for rest | interval | calc | warmup | cooldown.
+  * js/settings.js: renderMore(ctx), renderSettings(ctx), applyTheme(theme), syncReminderInfo() (writes kv 'reminderInfo' for sw.js: {enabled,time,days,lastTrained}); backup export/import UI, reset, reminders (.ics export, notification permission, periodicSync).
+  * Then: add new files to sw.js FILES, test in Playwright (mobile viewport, offline), final report.
