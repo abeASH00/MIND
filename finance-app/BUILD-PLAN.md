@@ -40,6 +40,8 @@ Work window: 3:30am to 7:00am Malaysia time. Commit and push after every finishe
 
 Done:
 - `app/js/util.js`: money in sen, dates, escaping, hashing, tidyName, seeded random
+- `app/js/csv.js`: CSV read/write, Bluecoins import (tested: transfers paired, splits merged, re-import skipped), exports, backup
+- `app/js/smart.js`: notification reader (tested on 10 Malaysian examples: payments, card charge duplicate, transfer, reload, TAC, promos, statement, salary)
 - `app/js/calc.js`: periods (payday month start), balances, net worth, category totals, splits,
   label totals, period series, net worth series, budgets, repeating rules, search filter
 
