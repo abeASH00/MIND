@@ -3,7 +3,7 @@
 const VERSION = 'kuat-v1';
 const FILES = [
   './', './index.html', './manifest.json', './css/app.css',
-  './js/app.js', './js/ui.js', './js/data.js', './js/stats.js', './js/exercises.js', './js/figures.js',
+  './js/app.js', './js/ui.js', './js/data.js', './js/stats.js', './js/exercise-data.js', './js/exercises.js', './js/figures.js', './js/charts.js',
   './js/plans.js', './js/workout.js', './js/suggest.js', './js/progress.js', './js/tools.js',
   './js/settings.js', './js/home.js',
   './fonts/fraunces-latin-600-normal.woff2', './fonts/dm-sans-latin-400-normal.woff2',
