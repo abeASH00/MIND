@@ -48,6 +48,7 @@ Done:
 - `app/js/cloud.js`: Firebase 10.12.2 from gstatic (loaded on demand), Google sign-in (popup, redirect fallback), pull/push last-write-wins on updatedAt with an outbox; parseConfig accepts the pasted firebaseConfig block
 - `app/js/icons.js`: original line icons (`icon(name, size)`), ACCOUNT_ICON map
 - `app/js/ui.js`: toast (with undo action), bottom sheets, confirmBox, badges, pickFrom/pickAccount/pickCategory (recent + search), calculator keypad (evalAmount tested), header(), shrinkImage, blobToBase64, saveFile (share or download)
+- `app/js/charts.js`: columns (grouped, rounded tops, hairline grid, legend, slot tooltips), line (area wash, end dot + label, crosshair tooltip, arrow keys), segBar (tall segmented bar with % inside, legend), meter, mountCharts(root). CSS still needs classes: .chart .tip .grid .axis .tick .mark .band .hit .area(10% opacity) .line(2px) .dot(2px surface ring) .cross .endlab .legend .lg .lg-rect .segbar .seg .ink-dark .meter.ok/.near/.over; colour tokens --inc --exp --c0..--c8
 - `tests/core.test.mjs`: 13 passing (`node --test tests/*.test.mjs`)
 - `app/js/calc.js`: periods (payday month start), balances, net worth, category totals, splits,
   label totals, period series, net worth series, budgets, repeating rules, search filter
@@ -65,7 +66,6 @@ To do, in this order:
    merchant extraction, category from merchant memory and then a keyword map (Malaysian merchants),
    duplicates (same amount within 10 min), "already recorded" check, confidence, a plain reason
    sentence, learning, and AI merge.
-6. `app/js/charts.js` (columns, line with crosshair, tall segmented bar, meter; see dataviz rules above).
 7. Views in `app/js/views/`: home, history, edit (transaction form with keypad, autocomplete,
    splits, labels, attachment, repeat), accounts and account detail (set balance), reports
    (spending, income, cash flow, net worth, labels), budgets, calendar, bills (repeating rules,
