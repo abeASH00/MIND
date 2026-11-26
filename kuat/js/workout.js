@@ -101,7 +101,7 @@ function card(we, idx, ssLabel) {
     <div class="meta ex-meta">${raw(metaJoin([target, partName(ex.part)]))}</div>
     <div class="last-line">${lastTxt}</div>
     ${we.sug ? html`<div class="suggest"><b>${we.sug.headline}</b><div class="why">${we.sug.why}</div>${we.sug.ideas && we.sug.ideas.length ? html`<ul>${we.sug.ideas.map((x) => html`<li>${x}</li>`)}</ul>` : ''}</div>` : ''}
-    <div class="sets-head"><span>Set</span><span>${ex.type === 'w' ? unit() + ' each' : ''}</span><span>${ex.type === 'time' ? 'Seconds' : 'Reps'}</span><span>Done</span></div>
+    <div class="sets-head"><span>Set</span><span>${ex.type === 'w' ? unit() + (ex.dbs === 2 ? ' each' : '') : ''}</span><span>${ex.type === 'time' ? 'Seconds' : 'Reps'}</span><span>Done</span></div>
     ${we.sets.map((_, i) => setRow(ex, we, i))}
     <div class="ex-actions">
       <button class="btn soft small" data-act="add-set" data-uid="${we.uid}">${icon('plus')} Set</button>
