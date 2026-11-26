@@ -1,0 +1,584 @@
+<title>Belanja</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one phone-width app column, sticky header, fixed bottom tab bar. Pandan green + saffron on a cool green-grey ground. */
+:root{
+  --bg:#EEF2EF; --surface:#FFFFFF; --surface2:#E3E9E5; --fg:#13211B; --muted:#5D6E66; --line:#D3DCD7;
+  --accent:#1D7550; --accent-ink:#FFFFFF; --accent-soft:#D5EBDF; --warm:#C98A14; --warm-soft:#F6E7C6;
+  --pos:#1D7550; --neg:#B4412F; --neg-soft:#F5DCD6;
+  --c-food:#D0702A; --c-trans:#2F6FB3; --c-shop:#9A4FB0; --c-util:#2C9A93; --c-house:#7A6A3A; --c-debt:#B4412F; --c-inc:#1D7550; --c-xfer:#6B7A73;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1512; --surface:#17211C; --surface2:#1F2B25; --fg:#E6EEEA; --muted:#93A59C; --line:#2A3832;
+  --accent:#4CC38A; --accent-ink:#06170F; --accent-soft:#1B3A2B; --warm:#E8B44A; --warm-soft:#3A2E14;
+  --pos:#4CC38A; --neg:#F08A76; --neg-soft:#3D211C; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0E1512; --surface:#17211C; --surface2:#1F2B25; --fg:#E6EEEA; --muted:#93A59C; --line:#2A3832;
+  --accent:#4CC38A; --accent-ink:#06170F; --accent-soft:#1B3A2B; --warm:#E8B44A; --warm-soft:#3A2E14;
+  --pos:#4CC38A; --neg:#F08A76; --neg-soft:#3D211C; color-scheme:dark;}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+.num{font-variant-numeric:tabular-nums}
+
+.app{max-width:460px;margin:0 auto;min-height:100%;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 calc(96px + env(safe-area-inset-bottom,0px))}
+.banner{margin:10px 0 0;padding:8px 12px;border-radius:10px;background:var(--warm-soft);color:var(--fg);font-size:12.5px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.banner button{font-size:12.5px;font-weight:600;color:var(--warm);white-space:nowrap}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding-block:14px 10px}
+header.top h1{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.01em;margin:0}
+header.top .sub{font-size:12.5px;color:var(--muted)}
+.iconbtn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line)}
+.iconbtn svg{width:20px;height:20px}
+
+h2{font-family:var(--display);font-size:17px;font-weight:700;margin:22px 0 10px;display:flex;justify-content:space-between;align-items:baseline;text-wrap:balance}
+h2 .link{font-family:var(--body);font-size:13px;font-weight:600;color:var(--accent)}
+.label{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* Hero summary */
+.summary{background:var(--accent);color:var(--accent-ink);border-radius:20px;padding:18px 18px 16px;display:grid;gap:12px}
+.summary .label{color:inherit;opacity:.8}
+.summary .big{font-family:var(--display);font-size:38px;font-weight:700;line-height:1;letter-spacing:-.02em}
+.summary .big small{font-size:18px;font-weight:500;opacity:.85;margin-right:4px}
+.meter{height:8px;border-radius:99px;background:color-mix(in srgb,var(--accent-ink) 22%,transparent);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent-ink);border-radius:99px}
+.summary .row{display:flex;justify-content:space-between;font-size:13px;opacity:.92;gap:8px;flex-wrap:wrap}
+
+.inboxcta{margin-top:12px;display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;width:100%;text-align:left}
+.inboxcta .dot{width:34px;height:34px;border-radius:10px;background:var(--warm-soft);color:var(--warm);display:grid;place-items:center;font-weight:700;font-family:var(--display)}
+.inboxcta b{display:block;font-size:14.5px}
+.inboxcta span{font-size:12.5px;color:var(--muted)}
+.inboxcta .chev{margin-left:auto;color:var(--muted)}
+
+.accts{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;margin-inline:-2px}
+.accts::-webkit-scrollbar{display:none}
+.acct{flex:0 0 auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:120px}
+.acct .n{font-size:12px;color:var(--muted)}
+.acct .v{font-weight:600;font-size:14.5px}
+
+/* Transaction list */
+.list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.day{display:flex;justify-content:space-between;padding:10px 14px 6px;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.03em;text-transform:uppercase;background:var(--surface2)}
+.tx{display:flex;align-items:center;gap:12px;padding:11px 14px;border-top:1px solid var(--line)}
+.day + .tx{border-top:0}
+.tx .meta{flex:1;min-width:0}
+.tx .t{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx .s{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx .a{font-weight:600;white-space:nowrap}
+.tx .a.inc{color:var(--pos)}
+.tx .a.xf{color:var(--muted)}
+.badge{display:inline-block;font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:6px;background:var(--surface2);color:var(--muted);margin-left:4px;vertical-align:1px}
+.cat{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;flex:0 0 auto;font-family:var(--display)}
+.empty{padding:22px 14px;text-align:center;color:var(--muted);font-size:14px}
+
+/* Inbox cards */
+.intro{font-size:13.5px;color:var(--muted);margin:0 0 12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:10px;margin-bottom:12px}
+.card.flag{border-color:var(--warm)}
+.notif{display:flex;gap:10px;align-items:flex-start;background:var(--surface2);border-radius:10px;padding:10px 12px;font-size:13px}
+.notif .app-i{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff;flex:0 0 auto}
+.notif .body{min-width:0}
+.notif .from{font-weight:600;font-size:12px}
+.notif .time{color:var(--muted);font-weight:400;margin-left:6px}
+.guess{display:flex;align-items:center;gap:12px}
+.guess .meta{flex:1;min-width:0}
+.guess .amt{font-family:var(--display);font-size:22px;font-weight:700}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12.5px;padding:5px 10px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);font-weight:500}
+button.chip:hover{border-color:var(--accent)}
+.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.why{font-size:12.5px;color:var(--muted);display:flex;gap:6px}
+.why svg{width:14px;height:14px;flex:0 0 auto;margin-top:2px;color:var(--warm)}
+.pill{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:6px;justify-self:start}
+.pill.ok{background:var(--accent-soft);color:var(--accent)}
+.pill.warn{background:var(--warm-soft);color:var(--warm)}
+.actions{display:flex;gap:8px}
+.btn{flex:1;padding:11px 12px;border-radius:12px;font-weight:600;font-size:14px;background:var(--surface2);border:1px solid var(--line)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.ghost{background:transparent}
+.skipped{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:4px 14px}
+.skipped summary{cursor:pointer;padding:10px 0;font-weight:600;font-size:14px;list-style:none;display:flex;justify-content:space-between}
+.skipped summary::-webkit-details-marker{display:none}
+.skip{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);font-size:13px}
+.skip .meta{flex:1;min-width:0}
+.skip .r{color:var(--muted);font-size:12px}
+.skip button{font-size:12.5px;font-weight:600;color:var(--accent);white-space:nowrap}
+
+/* Add screen */
+.seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface2);border-radius:12px;padding:4px;gap:4px}
+.seg button{padding:8px;border-radius:9px;font-weight:600;font-size:13.5px;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgb(0 0 0 / .08)}
+.amtbox{text-align:center;padding:18px 0 8px}
+.amtbox .v{font-family:var(--display);font-size:48px;font-weight:700;letter-spacing:-.02em;line-height:1.05}
+.amtbox .v small{font-size:22px;color:var(--muted);font-weight:500;margin-right:6px}
+.fields{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.field{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);width:100%;text-align:left}
+.field:first-child{border-top:0}
+.field .k{font-size:12.5px;color:var(--muted);width:70px;flex:0 0 auto}
+.field .val{flex:1;min-width:0;font-weight:500;display:flex;align-items:center;gap:8px}
+.field input{flex:1;min-width:0;border:0;background:transparent;outline:0;font-weight:500;padding:0}
+.field input[type=date]{color-scheme:inherit}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.keypad button{padding:14px 0;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:20px;font-weight:600;font-family:var(--display)}
+.keypad button:active{background:var(--surface2)}
+.scanrow{display:flex;gap:8px;margin-top:12px}
+.savebar{margin-top:12px}
+.savebar .btn{width:100%;padding:14px}
+
+/* Receipt result */
+.receipt{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:10px}
+.receipt .shop{font-family:var(--display);font-weight:700;font-size:18px}
+.items{font-size:13px;display:grid;gap:4px;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:8px 0}
+.items div{display:flex;justify-content:space-between;gap:10px}
+.items span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.splitrow{display:flex;align-items:center;gap:10px;font-size:14px}
+.splitrow .meta{flex:1}
+.loading{display:grid;place-items:center;gap:10px;padding:40px 0;color:var(--muted);font-size:14px}
+.spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Reports */
+.bars{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:12px}
+.bar .top{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:5px;gap:8px}
+.bar .top b{font-weight:600}
+.bar .track{height:10px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.bar .track i{display:block;height:100%;border-radius:99px}
+.daily{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.daily .cols{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;align-items:end;height:120px;border-bottom:1px solid var(--line)}
+.daily .cols i{display:block;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px;opacity:.85}
+.daily .cols i.today{background:var(--warm);opacity:1}
+.daily .xl{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;font-size:10px;color:var(--muted);text-align:center;margin-top:4px}
+.daily .cap{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.stat .v{font-family:var(--display);font-weight:700;font-size:20px}
+
+/* History */
+.search{display:flex;gap:8px;margin-bottom:10px}
+.search input,.search select{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.search select{flex:0 1 150px}
+
+/* Tab bar */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+nav.tabs .in{max-width:460px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:center}
+nav.tabs button{display:grid;justify-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--muted);padding:6px 0;position:relative}
+nav.tabs button svg{width:22px;height:22px}
+nav.tabs button.on{color:var(--accent)}
+nav.tabs .add{width:52px;height:52px;border-radius:16px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;margin:-22px auto 0;box-shadow:0 6px 16px rgb(0 0 0 / .18)}
+nav.tabs .add svg{width:26px;height:26px}
+nav.tabs .cnt{position:absolute;top:2px;left:calc(50% + 6px);min-width:17px;height:17px;border-radius:99px;background:var(--warm);color:#fff;font-size:10.5px;display:grid;place-items:center;padding:0 4px}
+
+/* Sheet */
+.backdrop{position:fixed;inset:0;background:rgb(0 0 0 / .4);z-index:20}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--surface);border-radius:20px 20px 0 0;max-height:78vh;overflow:auto;padding:8px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet .in{max-width:460px;margin:0 auto}
+.sheet .grab{width:40px;height:4px;border-radius:9px;background:var(--line);margin:4px auto 12px}
+.sheet h3{font-family:var(--display);margin:0 0 12px;font-size:18px}
+.sheet .grp{margin-bottom:14px}
+.sheet .grp .label{margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.sheet .grp .label i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.opt{display:flex;justify-content:space-between;width:100%;padding:12px 4px;border-bottom:1px solid var(--line);text-align:left;font-weight:500}
+.opt.on{color:var(--accent);font-weight:600}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:500;z-index:30;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion: reduce){.spin{animation:none}}
+</style>
+
+<div class="app" id="app"></div>
+<nav class="tabs" aria-label="Main">
+  <div class="in">
+    <button data-go="home" id="tab-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+    <button data-go="inbox" id="tab-inbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/></svg>Inbox<span class="cnt" id="inboxCnt" hidden></span></button>
+    <button data-go="add" id="tab-add" aria-label="Add expense"><span class="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></button>
+    <button data-go="history" id="tab-history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>History</button>
+    <button data-go="reports" id="tab-reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Reports</button>
+  </div>
+</nav>
+<div class="backdrop" id="backdrop" hidden></div>
+<div class="sheet" id="sheet" hidden><div class="in" id="sheetIn"></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+// ---------- Reference data (to be replaced by the real list from the Bluecoins export) ----------
+const CATS = [
+  {p:"Food & Drinks", c:"var(--c-food)", ab:"FD", subs:["Dining Out","Take Away","Grocery"]},
+  {p:"Transportation", c:"var(--c-trans)", ab:"TR", subs:["Fuel","Toll","Parking"]},
+  {p:"Shopping", c:"var(--c-shop)", ab:"SH", subs:["Household","Clothing","Online"]},
+  {p:"Utilities", c:"var(--c-util)", ab:"UT", subs:["Electricity","Water","Phone & Internet"]},
+  {p:"Housing", c:"var(--c-house)", ab:"HS", subs:["Rent","Maintenance"]},
+  {p:"Debt", c:"var(--c-debt)", ab:"DB", subs:["Credit Card","Loan"]},
+  {p:"Income", c:"var(--c-inc)", ab:"IN", subs:["Salary","Side Income"], income:true},
+];
+const ACCTS = ["RHB Bank","CIMB Bank","CIMB Petronas Visa-i","Affin Bank","TnG","SETEL","Wallet"];
+const OPENING = {"RHB Bank":6120.40,"CIMB Bank":2310.15,"CIMB Petronas Visa-i":-842.30,"Affin Bank":1505.00,"TnG":88.20,"SETEL":35.00,"Wallet":142.00};
+const BUDGET = 2500;
+const TODAY = "2026-11-26";
+
+const catOf = p => CATS.find(c => c.p === p) || {c:"var(--c-xfer)", ab:"↔"};
+const fmt = n => "RM" + Math.abs(n).toLocaleString("en-MY",{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+const uid = () => Math.random().toString(36).slice(2,9);
+const addDays = (iso, d) => { const t = new Date(iso + "T00:00:00"); t.setDate(t.getDate() + d); return t.toISOString().slice(0,10); };
+const dayLabel = iso => {
+  if (iso === TODAY) return "Today";
+  if (iso === addDays(TODAY,-1)) return "Yesterday";
+  return new Date(iso + "T00:00:00").toLocaleDateString("en-MY",{weekday:"short",day:"numeric",month:"short"});
+};
+
+// type: e expense, i income, t transfer (same letters Bluecoins uses)
+const SAMPLE_TX = [
+  ["2026-11-26","e",9.50,"Food & Drinks","Dining Out","TnG","Roti canai + teh tarik, Mamak Ali"],
+  ["2026-11-26","e",7.00,"Transportation","Toll","TnG","Toll, LDP"],
+  ["2026-11-25","e",54.80,"Food & Drinks","Grocery","CIMB Bank","Pasar pagi Seksyen 7"],
+  ["2026-11-25","e",23.00,"Food & Drinks","Take Away","TnG","GrabFood, nasi lemak"],
+  ["2026-11-24","e",60.00,"Transportation","Fuel","SETEL","Petron Jalan Kuching"],
+  ["2026-11-24","e",139.00,"Utilities","Phone & Internet","RHB Bank","Unifi monthly"],
+  ["2026-11-23","e",42.60,"Food & Drinks","Dining Out","CIMB Petronas Visa-i","Dinner, Restoran Rebung"],
+  ["2026-11-22","e",188.40,"Food & Drinks","Grocery","CIMB Petronas Visa-i","Lotus's Setia Alam"],
+  ["2026-11-21","e",96.30,"Utilities","Electricity","RHB Bank","TNB bill"],
+  ["2026-11-20","e",35.90,"Shopping","Online","CIMB Petronas Visa-i","Shopee, phone case"],
+  ["2026-11-19","e",50.00,"Transportation","Fuel","SETEL","Shell Batu Tiga"],
+  ["2026-11-18","e",12.00,"Transportation","Parking","Wallet","Parking, Sunway Pyramid"],
+  ["2026-11-17","e",31.20,"Food & Drinks","Dining Out","TnG","Lunch with team"],
+  ["2026-11-15","e",1200.00,"Housing","Rent","RHB Bank","Rent, November"],
+  ["2026-11-14","e",28.50,"Shopping","Household","Wallet","Mr DIY"],
+  ["2026-11-13","e",45.00,"Food & Drinks","Grocery","Wallet","Pasar malam"],
+  ["2026-11-01","i",4800.00,"Income","Salary","RHB Bank","Salary, November"],
+].map(([date,type,amt,p,s,acct,note]) => ({id:uid(),date,type,amt,p,s,acct,note,src:"manual"}));
+
+// What the "smart inbox" would receive from bank / e-wallet notifications, already judged by the AI.
+const SAMPLE_INBOX = [
+  {id:"n1", app:"TnG eWallet", ai:"TnG", aiColor:"#1E5BB8", time:"1:12 pm",
+   text:"You have paid RM12.50 to NASI KANDAR PELITA SS2.",
+   g:{type:"e", amt:12.50, p:"Food & Drinks", s:"Dining Out", acct:"TnG", note:"Nasi Kandar Pelita SS2"},
+   why:"A payment to a restaurant. You put Pelita under Dining Out the last 6 times.", conf:"ok"},
+  {id:"n2", app:"SETEL", ai:"ST", aiColor:"#E0592A", time:"8:04 am",
+   text:"Payment of RM50.00 at Petron Jalan Kuching was successful.",
+   g:{type:"e", amt:50.00, p:"Transportation", s:"Fuel", acct:"SETEL", note:"Petron Jalan Kuching"},
+   why:"Fuel purchase in the SETEL app.", conf:"ok"},
+  {id:"n3", app:"CIMB Clicks", ai:"CB", aiColor:"#C8102E", time:"8:04 am",
+   text:"CIMB Petronas Visa-i: RM50.00 charged at SETEL PETRON on 26/11.",
+   g:{type:"e", amt:50.00, p:"Transportation", s:"Fuel", acct:"CIMB Petronas Visa-i", note:"Petron Jalan Kuching"},
+   why:"Same RM50.00, same minute as the SETEL payment above. Probably one purchase showing up twice.", conf:"warn", dup:"n2"},
+  {id:"n4", app:"RHB Mobile", ai:"RH", aiColor:"#0067B1", time:"Yesterday",
+   text:"You have transferred RM200.00 to TOUCH N GO EWALLET.",
+   g:{type:"t", amt:200.00, p:"Transfer", s:"RHB Bank → TnG", acct:"RHB Bank", to:"TnG", note:"TnG reload"},
+   why:"Money moving between two of your own accounts, so it isn't spending. Saving it as a transfer.", conf:"ok"},
+];
+const SAMPLE_SKIPPED = [
+  {id:"k1", app:"CIMB Clicks", text:"Enjoy 0% EPP up to 36 months with your CIMB card. T&C apply.", r:"Promotion, no money moved"},
+  {id:"k2", app:"RHB Mobile", text:"Your TAC is 482913. Do not share this number.", r:"Security code"},
+  {id:"k3", app:"Shopee", text:"11.11 is back! Grab vouchers up to RM100 off now.", r:"Advert from a shopping app"},
+];
+
+// ---------- State (kept in this browser only, so the preview remembers your taps) ----------
+const KEY = "belanja-preview-v1";
+let S;
+function fresh(){ return {tx:SAMPLE_TX.map(t=>({...t})), inbox:SAMPLE_INBOX.map(n=>({...n,g:{...n.g}})), skipped:SAMPLE_SKIPPED.map(k=>({...k})), restored:[], view:"home", hideBanner:false}; }
+try { S = JSON.parse(localStorage.getItem(KEY)) || fresh(); } catch(e){ S = fresh(); }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
+
+let draft = newDraft();
+function newDraft(){ return {type:"e", amt:"", p:"Food & Drinks", s:"Dining Out", acct:"TnG", to:"Wallet", note:"", date:TODAY}; }
+let scan = null; // receipt scan state
+let hist = {q:"", acct:""};
+
+const $app = document.getElementById("app");
+
+// ---------- Helpers ----------
+function balances(){
+  const b = {...OPENING};
+  for (const t of S.tx){
+    if (t.type==="e") b[t.acct] -= t.amt;
+    else if (t.type==="i") b[t.acct] += t.amt;
+    else if (t.type==="t"){ b[t.acct] -= t.amt; if (t.to) b[t.to] += t.amt; }
+  }
+  return b;
+}
+const monthTx = () => S.tx.filter(t => t.date.slice(0,7) === TODAY.slice(0,7));
+const spentMonth = () => monthTx().filter(t=>t.type==="e").reduce((a,t)=>a+t.amt,0);
+
+function txRow(t){
+  const c = t.type==="t" ? catOf("") : catOf(t.p);
+  const cls = t.type==="i" ? "inc" : t.type==="t" ? "xf" : "";
+  const sign = t.type==="i" ? "+" : t.type==="t" ? "" : "−";
+  const src = t.src==="notif" ? '<span class="badge">auto</span>' : t.src==="receipt" ? '<span class="badge">receipt</span>' : "";
+  const sub = t.type==="t" ? `${esc(t.acct)} → ${esc(t.to||"")}` : `${esc(t.s)} · ${esc(t.acct)}`;
+  return `<div class="tx"><div class="cat" style="background:${c.c}">${c.ab}</div>
+    <div class="meta"><div class="t">${esc(t.note || t.s)}${src}</div><div class="s">${sub}</div></div>
+    <div class="a num ${cls}">${sign}${fmt(t.amt)}</div></div>`;
+}
+function groupedList(txs, limitDays){
+  const sorted = [...txs].sort((a,b)=> b.date.localeCompare(a.date));
+  if (!sorted.length) return `<div class="list"><div class="empty">No transactions match.</div></div>`;
+  const days = [...new Set(sorted.map(t=>t.date))].slice(0, limitDays || 999);
+  return `<div class="list">` + days.map(d => {
+    const ts = sorted.filter(t=>t.date===d);
+    const spent = ts.filter(t=>t.type==="e").reduce((a,t)=>a+t.amt,0);
+    return `<div class="day"><span>${dayLabel(d)}</span><span class="num">${spent?"−"+fmt(spent):""}</span></div>` + ts.map(txRow).join("");
+  }).join("") + `</div>`;
+}
+const ICON_SPARK = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg>';
+const ICON_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" style="vertical-align:-3px;margin-right:6px"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>';
+
+function header(title, sub, right=""){
+  return `<header class="top"><div><h1>${title}</h1>${sub?`<div class="sub">${sub}</div>`:""}</div>${right}</header>`;
+}
+
+// ---------- Views ----------
+function vHome(){
+  const spent = spentMonth(), pct = Math.min(100, spent / BUDGET * 100);
+  const b = balances();
+  const daysLeft = 30 - Number(TODAY.slice(8));
+  const banner = S.hideBanner ? "" : `<div class="banner"><span>Preview with example data. Nothing here is your real money.</span><button data-act="hideBanner">Got it</button></div>`;
+  const n = S.inbox.length;
+  return banner + header("Belanja", "Thursday, 26 November",
+      `<button class="iconbtn" data-act="reset" aria-label="Reset preview" title="Reset preview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>`) +
+    `<section class="summary">
+      <div class="label">Spent in November</div>
+      <div class="big num"><small>RM</small>${spent.toLocaleString("en-MY",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="meter" role="img" aria-label="${pct.toFixed(0)} percent of budget used"><i style="width:${pct}%"></i></div>
+      <div class="row num"><span>${pct.toFixed(0)}% of ${fmt(BUDGET)} budget</span><span>${fmt(Math.max(0,BUDGET-spent))} left · ${daysLeft} days</span></div>
+    </section>` +
+    (n ? `<button class="inboxcta" data-go="inbox"><span class="dot">${n}</span><span><b>${n} to check from your notifications</b><span>Belanja guessed the details. Tap to confirm.</span></span><span class="chev">›</span></button>` : "") +
+    `<h2>Accounts</h2><div class="accts">` + ACCTS.map(a => `<div class="acct"><div class="n">${esc(a)}</div><div class="v num" style="${b[a]<0?"color:var(--neg)":""}">${b[a]<0?"−":""}${fmt(b[a])}</div></div>`).join("") + `</div>` +
+    `<h2>Recent <button class="link" data-go="history">See all</button></h2>` + groupedList(S.tx, 3);
+}
+
+function vInbox(){
+  let out = header("Inbox", "From your bank and e-wallet notifications");
+  out += `<p class="intro">Belanja reads each notification, skips the junk, and fills in a guess. Nothing is saved until you tap Save.</p>`;
+  if (!S.inbox.length) out += `<div class="card"><div class="empty">All caught up. New payments will show up here.</div></div>`;
+  for (const n of S.inbox){
+    const g = n.g, c = g.type==="t" ? catOf("") : catOf(g.p);
+    out += `<div class="card ${n.conf==="warn"?"flag":""}">
+      <span class="pill ${n.conf==="warn"?"warn":"ok"}">${n.dup ? "Possible duplicate" : g.type==="t" ? "Transfer" : "Looks right"}</span>
+      <div class="notif"><div class="app-i" style="background:${n.aiColor}">${n.ai}</div><div class="body"><div class="from">${esc(n.app)}<span class="time">${esc(n.time)}</span></div>${esc(n.text)}</div></div>
+      <div class="guess"><div class="cat" style="background:${c.c}">${c.ab}</div>
+        <div class="meta"><div style="font-weight:600">${esc(g.note)}</div>
+        <div class="chips" style="margin-top:6px">
+          ${g.type==="t" ? `<span class="chip">${esc(g.acct)} → ${esc(g.to)}</span>` :
+          `<button class="chip" data-act="pickCat" data-id="${n.id}">${esc(g.s)} ▾</button><button class="chip" data-act="pickAcct" data-id="${n.id}">${esc(g.acct)} ▾</button>`}
+        </div></div>
+        <div class="amt num">${fmt(g.amt)}</div></div>
+      <div class="why">${ICON_SPARK}<span>${esc(n.why)}</span></div>
+      <div class="actions">
+        ${n.dup ? `<button class="btn" data-act="saveInbox" data-id="${n.id}">Save anyway</button><button class="btn primary" data-act="dismiss" data-id="${n.id}" data-msg="Skipped duplicate">Skip duplicate</button>`
+                : `<button class="btn ghost" data-act="dismiss" data-id="${n.id}" data-msg="Skipped">Skip</button><button class="btn primary" data-act="saveInbox" data-id="${n.id}">Save</button>`}
+      </div></div>`;
+  }
+  out += `<details class="skipped"><summary><span>Skipped by Belanja (${S.skipped.length})</span><span style="color:var(--muted)">›</span></summary>` +
+    (S.skipped.length ? S.skipped.map(k => `<div class="skip"><div class="meta"><div><b>${esc(k.app)}</b> ${esc(k.text)}</div><div class="r">${esc(k.r)}</div></div><button data-act="restore" data-id="${k.id}">Not junk</button></div>`).join("") : `<div class="skip"><div class="meta r">Nothing skipped.</div></div>`) +
+    `</details>`;
+  return out;
+}
+
+function vAdd(){
+  if (scan) return vScan();
+  const d = draft, c = d.type==="t" ? catOf("") : catOf(d.p);
+  const amtShown = d.amt === "" ? "0.00" : d.amt;
+  return header(d.type==="i" ? "Add income" : d.type==="t" ? "Add transfer" : "Add expense") +
+    `<div class="seg" role="tablist">
+      <button class="${d.type==="e"?"on":""}" data-act="type" data-v="e">Expense</button>
+      <button class="${d.type==="i"?"on":""}" data-act="type" data-v="i">Income</button>
+      <button class="${d.type==="t"?"on":""}" data-act="type" data-v="t">Transfer</button>
+    </div>
+    <div class="amtbox"><div class="v num"><small>RM</small>${esc(amtShown)}</div></div>
+    <div class="fields">
+      ${d.type==="t" ? `
+        <button class="field" data-act="pickAcct" data-id="draft"><span class="k">From</span><span class="val">${esc(d.acct)}</span><span>›</span></button>
+        <button class="field" data-act="pickTo"><span class="k">To</span><span class="val">${esc(d.to)}</span><span>›</span></button>` : `
+        <button class="field" data-act="pickCat" data-id="draft"><span class="k">Category</span><span class="val"><span class="cat" style="background:${c.c};width:24px;height:24px;font-size:9px;border-radius:7px">${c.ab}</span>${esc(d.s)} <span style="color:var(--muted);font-weight:400">· ${esc(d.p)}</span></span><span>›</span></button>
+        <button class="field" data-act="pickAcct" data-id="draft"><span class="k">Account</span><span class="val">${esc(d.acct)}</span><span>›</span></button>`}
+      <label class="field" for="noteIn"><span class="k">Note</span><input id="noteIn" placeholder="e.g. Mamak Ali, lunch" value="${esc(d.note)}"></label>
+      <label class="field" for="dateIn"><span class="k">Date</span><input id="dateIn" type="date" value="${d.date}"></label>
+    </div>
+    <div class="keypad num">${["1","2","3","4","5","6","7","8","9",".","0","⌫"].map(k=>`<button data-act="key" data-k="${k}" aria-label="${k==="⌫"?"Delete":k}">${k}</button>`).join("")}</div>
+    <div class="scanrow"><button class="btn" data-act="scanSample">${ICON_CAM}Scan a receipt</button></div>
+    <div class="savebar"><button class="btn primary" data-act="saveDraft">Save</button></div>`;
+}
+
+const RECEIPT = {shop:"Lotus's Setia Alam", date:TODAY, acct:"CIMB Petronas Visa-i", items:[
+  ["Beras Faiza 5kg",26.90,"Grocery"],["Ayam segar 1.2kg",14.30,"Grocery"],["Telur gred A 30s",13.50,"Grocery"],
+  ["Sayur campur",6.80,"Grocery"],["Dynamo liquid 2.7kg",18.90,"Household"],["Tisu Premier 10s",9.90,"Household"]]};
+
+function vScan(){
+  if (scan.stage === "loading") return header("Reading receipt") + `<div class="loading"><div class="spin"></div>Finding the shop, total and items…</div>`;
+  const r = RECEIPT, total = r.items.reduce((a,i)=>a+i[1],0);
+  const groups = {};
+  r.items.forEach(([,a,s]) => groups[s] = (groups[s]||0) + a);
+  const pOf = s => s==="Household" ? "Shopping" : "Food & Drinks";
+  return header("Receipt", "Check it, then save") +
+   `<div class="receipt">
+     <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><div class="shop">${esc(r.shop)}</div><div class="num" style="font-family:var(--display);font-weight:700;font-size:20px">${fmt(total)}</div></div>
+     <div style="font-size:12.5px;color:var(--muted)">26 Nov 2026 · paid with ${esc(r.acct)}</div>
+     <div class="items num">${r.items.map(i=>`<div><span>${esc(i[0])}</span><span>${i[1].toFixed(2)}</span></div>`).join("")}</div>
+     <div class="label">Save as</div>
+     <div class="seg" style="grid-template-columns:1fr 1fr">
+       <button class="${scan.mode==="one"?"on":""}" data-act="scanMode" data-v="one">One entry</button>
+       <button class="${scan.mode==="split"?"on":""}" data-act="scanMode" data-v="split">Split by category</button>
+     </div>
+     ${scan.mode==="one"
+       ? `<div class="splitrow"><div class="cat" style="background:var(--c-food)">FD</div><div class="meta">Grocery<div style="font-size:12.5px;color:var(--muted)">Food & Drinks</div></div><b class="num">${fmt(total)}</b></div>`
+       : Object.entries(groups).map(([s,a])=>{const c=catOf(pOf(s));return `<div class="splitrow"><div class="cat" style="background:${c.c}">${c.ab}</div><div class="meta">${s}<div style="font-size:12.5px;color:var(--muted)">${pOf(s)}</div></div><b class="num">${fmt(a)}</b></div>`}).join("")}
+     <div class="why">${ICON_SPARK}<span>${scan.mode==="split" ? "Detergent and tissue moved to Household. Everything else is Grocery." : "Mostly food items, so the whole receipt goes to Grocery."}</span></div>
+   </div>
+   <div class="actions" style="margin-top:12px"><button class="btn" data-act="scanCancel">Cancel</button><button class="btn primary" data-act="scanSave">Save</button></div>
+   <p class="intro" style="margin-top:12px">In the real app you take a photo or share one from your gallery. This preview uses a sample Lotus's receipt.</p>`;
+}
+
+function vHistory(){
+  const q = hist.q.toLowerCase();
+  const txs = S.tx.filter(t => (!hist.acct || t.acct===hist.acct || t.to===hist.acct) && (!q || (t.note+" "+t.s+" "+t.p).toLowerCase().includes(q)));
+  return header("History", `${S.tx.length} transactions`) +
+    `<div class="search"><input id="q" type="search" placeholder="Search notes or categories" value="${esc(hist.q)}" aria-label="Search">
+     <select id="acctF" aria-label="Filter by account"><option value="">All accounts</option>${ACCTS.map(a=>`<option ${hist.acct===a?"selected":""}>${esc(a)}</option>`).join("")}</select></div>` +
+    groupedList(txs);
+}
+
+function vReports(){
+  const tx = monthTx().filter(t=>t.type==="e");
+  const total = tx.reduce((a,t)=>a+t.amt,0);
+  const byP = {};
+  tx.forEach(t => byP[t.p] = (byP[t.p]||0) + t.amt);
+  const rows = Object.entries(byP).sort((a,b)=>b[1]-a[1]);
+  const max = rows.length ? rows[0][1] : 1;
+  // Last 14 days, excluding rent so daily habits are visible
+  const days = [...Array(14)].map((_,i)=>addDays(TODAY, i-13));
+  const daily = days.map(d => S.tx.filter(t=>t.date===d && t.type==="e" && t.s!=="Rent").reduce((a,t)=>a+t.amt,0));
+  const dmax = Math.max(50, Math.ceil(Math.max(...daily)/50)*50);
+  const avg = daily.reduce((a,b)=>a+b,0)/14;
+  const food = (byP["Food & Drinks"]||0);
+  return header("Reports", "November 2026") +
+   `<div class="stats">
+      <div class="stat"><div class="label">Spent</div><div class="v num">${fmt(total)}</div></div>
+      <div class="stat"><div class="label">Daily avg, 14 days</div><div class="v num">${fmt(avg)}</div></div>
+    </div>
+    <h2>By category</h2>
+    <div class="bars">${rows.map(([p,a])=>`<div class="bar"><div class="top"><b>${esc(p)}</b><span class="num">${fmt(a)} · ${(a/total*100).toFixed(0)}%</span></div><div class="track"><i style="width:${a/max*100}%;background:${catOf(p).c}"></i></div></div>`).join("")}</div>
+    <h2>Last 14 days</h2>
+    <div class="daily">
+      <div class="cap num"><span>Rent left out</span><span>top line ${fmt(dmax)}</span></div>
+      <div class="cols" style="background:linear-gradient(to top,var(--line) 1px,transparent 1px) left bottom/100% ${120/(dmax/50)}px repeat-y" role="img" aria-label="Daily spending bar chart">${daily.map((v,i)=>`<i class="${days[i]===TODAY?"today":""}" style="height:${v/dmax*100}%" title="${dayLabel(days[i])}: ${fmt(v)}"></i>`).join("")}</div>
+      <div class="xl num">${days.map(d=>`<span>${Number(d.slice(8))}</span>`).join("")}</div>
+    </div>
+    <div class="why" style="margin-top:12px">${ICON_SPARK}<span>Food & Drinks is ${fmt(food)} so far. Grocery runs are your biggest food cost, more than eating out.</span></div>`;
+}
+
+// ---------- Render ----------
+function render(){
+  const v = S.view;
+  $app.innerHTML = v==="inbox" ? vInbox() : v==="add" ? vAdd() : v==="history" ? vHistory() : v==="reports" ? vReports() : vHome();
+  document.querySelectorAll("nav.tabs button").forEach(b => b.classList.toggle("on", b.dataset.go === v));
+  const cnt = document.getElementById("inboxCnt");
+  cnt.hidden = !S.inbox.length; cnt.textContent = S.inbox.length;
+  if (v==="history"){
+    const q = document.getElementById("q");
+    q.addEventListener("input", e => { hist.q = e.target.value; const pos = e.target.selectionStart; render(); const n=document.getElementById("q"); n.focus(); n.setSelectionRange(pos,pos); });
+    document.getElementById("acctF").addEventListener("change", e => { hist.acct = e.target.value; render(); });
+  }
+  if (v==="add" && !scan){
+    document.getElementById("noteIn").addEventListener("input", e => draft.note = e.target.value);
+    document.getElementById("dateIn").addEventListener("change", e => draft.date = e.target.value || TODAY);
+  }
+}
+function go(v){ S.view = v; if (v!=="add") scan = null; save(); render(); window.scrollTo(0,0); }
+
+let toastT;
+function toast(msg){ const t = document.getElementById("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(()=>t.hidden = true, 2000); }
+
+// ---------- Sheet (pickers) ----------
+let sheetCb = null;
+function openSheet(html, cb){ document.getElementById("sheetIn").innerHTML = `<div class="grab"></div>` + html; sheetCb = cb; document.getElementById("sheet").hidden = false; document.getElementById("backdrop").hidden = false; }
+function closeSheet(){ document.getElementById("sheet").hidden = true; document.getElementById("backdrop").hidden = true; sheetCb = null; }
+document.getElementById("backdrop").addEventListener("click", closeSheet);
+document.getElementById("sheet").addEventListener("click", e => {
+  const o = e.target.closest("[data-pick]"); if (!o || !sheetCb) return;
+  const cb = sheetCb; closeSheet(); cb(o.dataset.pick); render();
+});
+function catSheet(cur, income){
+  const cats = CATS.filter(c => !!c.income === !!income);
+  return `<h3>Choose category</h3>` + cats.map(c => `<div class="grp"><div class="label"><i style="background:${c.c}"></i>${esc(c.p)}</div>${c.subs.map(s=>`<button class="opt ${cur===s?"on":""}" data-pick="${esc(c.p)}|${esc(s)}">${esc(s)}${cur===s?"<span>✓</span>":""}</button>`).join("")}</div>`).join("") +
+    `<p class="intro">Your real categories will come from your Bluecoins export.</p>`;
+}
+function acctSheet(cur, title="Choose account"){
+  return `<h3>${title}</h3>` + ACCTS.map(a => `<button class="opt ${cur===a?"on":""}" data-pick="${esc(a)}">${esc(a)}${cur===a?"<span>✓</span>":""}</button>`).join("");
+}
+
+// ---------- Actions ----------
+document.addEventListener("click", e => {
+  const g = e.target.closest("[data-go]");
+  if (g){ go(g.dataset.go); return; }
+  const el = e.target.closest("[data-act]"); if (!el) return;
+  const a = el.dataset.act, id = el.dataset.id;
+  const item = id && id!=="draft" ? S.inbox.find(n=>n.id===id) : null;
+  switch(a){
+    case "hideBanner": S.hideBanner = true; save(); render(); break;
+    case "reset":
+      openSheet(`<h3>Reset the preview?</h3><p class="intro">This puts the example data back the way it started.</p><div class="actions"><button class="btn" data-pick="no">Cancel</button><button class="btn primary" data-pick="yes">Reset</button></div>`,
+        v => { if (v==="yes"){ S = fresh(); draft = newDraft(); save(); toast("Preview reset"); } });
+      break;
+    case "pickCat": {
+      const target = item ? item.g : draft;
+      openSheet(catSheet(target.s, target.type==="i"), v => { const [p,s] = v.split("|"); target.p = p; target.s = s; if (item) item.why = "You changed the category. Belanja will remember this for next time."; save(); });
+      break; }
+    case "pickAcct": {
+      const target = item ? item.g : draft;
+      openSheet(acctSheet(target.acct, draft.type==="t" && !item ? "From account" : "Choose account"), v => { target.acct = v; save(); });
+      break; }
+    case "pickTo": openSheet(acctSheet(draft.to, "To account"), v => { draft.to = v; }); break;
+    case "saveInbox": {
+      const gg = item.g;
+      S.tx.push({id:uid(), date: item.time==="Yesterday" ? addDays(TODAY,-1) : TODAY, type:gg.type, amt:gg.amt, p:gg.p, s:gg.s, acct:gg.acct, to:gg.to, note:gg.note, src:"notif"});
+      S.inbox = S.inbox.filter(n=>n.id!==id);
+      // Saving the original makes its duplicate obvious; saving one card of a pair clears the warning on the other.
+      save(); toast("Saved " + fmt(gg.amt)); render(); break; }
+    case "dismiss": S.inbox = S.inbox.filter(n=>n.id!==id); save(); toast(el.dataset.msg || "Skipped"); render(); break;
+    case "restore": {
+      const k = S.skipped.find(x=>x.id===id);
+      S.skipped = S.skipped.filter(x=>x.id!==id);
+      toast("Thanks. Belanja won't skip messages like this again."); save(); render(); break; }
+    case "type":
+      draft.type = el.dataset.v;
+      if (draft.type==="i"){ draft.p="Income"; draft.s="Salary"; draft.acct="RHB Bank"; }
+      else if (draft.type==="e" && draft.p==="Income"){ draft.p="Food & Drinks"; draft.s="Dining Out"; }
+      render(); break;
+    case "key": {
+      const k = el.dataset.k; let s = draft.amt;
+      if (k==="⌫") s = s.slice(0,-1);
+      else if (k==="."){ if (!s.includes(".")) s = (s||"0") + "."; }
+      else { if (s.includes(".") && s.split(".")[1].length>=2) break; if (s.replace(".","").length>=8) break; s = (s==="0" ? "" : s) + k; }
+      draft.amt = s; render(); break; }
+    case "saveDraft": {
+      const amt = parseFloat(draft.amt);
+      if (!amt || amt<=0){ toast("Type an amount first"); break; }
+      if (draft.type==="t" && draft.acct===draft.to){ toast("Pick two different accounts"); break; }
+      S.tx.push({id:uid(), date:draft.date, type:draft.type, amt, p:draft.type==="t"?"Transfer":draft.p, s:draft.type==="t"?"":draft.s, acct:draft.acct, to:draft.type==="t"?draft.to:undefined, note:draft.note.trim(), src:"manual"});
+      draft = newDraft(); save(); toast("Saved " + fmt(amt)); go("home"); break; }
+    case "scanSample": scan = {stage:"loading", mode:"one"}; render(); setTimeout(()=>{ if (scan){ scan.stage="done"; render(); } }, 1300); break;
+    case "scanMode": scan.mode = el.dataset.v; render(); break;
+    case "scanCancel": scan = null; render(); break;
+    case "scanSave": {
+      const r = RECEIPT, total = r.items.reduce((s,i)=>s+i[1],0);
+      if (scan.mode==="one") S.tx.push({id:uid(), date:r.date, type:"e", amt:+total.toFixed(2), p:"Food & Drinks", s:"Grocery", acct:r.acct, note:r.shop, src:"receipt"});
+      else {
+        const groups = {}; r.items.forEach(([,a,s]) => groups[s]=(groups[s]||0)+a);
+        for (const [s,a] of Object.entries(groups)) S.tx.push({id:uid(), date:r.date, type:"e", amt:+a.toFixed(2), p: s==="Household"?"Shopping":"Food & Drinks", s, acct:r.acct, note:r.shop, src:"receipt"});
+      }
+      scan = null; save(); toast("Receipt saved"); go("home"); break; }
+  }
+});
+
+render();
+})();
+</script>

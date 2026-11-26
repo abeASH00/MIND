@@ -1,6 +1,6 @@
 # Claude memory: read this first in every new chat
 
-Updated: 2026-11-26
+Updated: 2026-11-26 (chat 1, later)
 
 ## About the user
 - Not a developer. Wants plain-word steps and complete copy-paste files, not diffs.
@@ -41,7 +41,18 @@ Updated: 2026-11-26
 - Proposed phases: 1 clickable preview (fake data) → 2 manual entry + Firebase save →
   3 import Bluecoins history from CSV → 4 receipt photo reading → 5 smart notification inbox
   → 6 reports/budgets.
-- Nothing built yet. Waiting on: three-lane slot, Bluecoins CSV export.
+- App name (working): "Belanja".
+- PHASE 1 DONE: clickable preview, example data only.
+  File: finance-app/preview.html (in this repo). Live link: https://claude.ai/artifact/16JTfHjTjvdRvQnCYcTcV7
+  Screens: Home (month spent vs RM2,500 budget, account balances, recent), Inbox (smart
+  notification cards: Looks right / Possible duplicate / Transfer, plus "Skipped by Belanja" junk list
+  with "Not junk"), Add (expense/income/transfer, keypad, category + account pickers, note, date),
+  Receipt scan (sample Lotus's receipt, one entry vs split by category), History (search + account filter),
+  Reports (by category bars, last-14-days bars).
+  Preview saves taps in the browser only. Types use Bluecoins letters e / i / t.
+- User said "just do it first" and skip the questions for now. Still open: three-lane slot,
+  Bluecoins CSV export (needed for exact category names in phase 2/3).
+- NEXT: get user's feedback on the preview, then phase 2 (real manual entry + Firebase).
 
 ### Open questions
 1. (answered: replace)
@@ -52,3 +63,4 @@ Updated: 2026-11-26
 ## Log
 - 2026-11-26: Memory file created. Handoff from earlier chat absorbed.
 - 2026-11-26: User chose to replace Bluecoins. Plan and phases proposed.
+- 2026-11-26: Built and published phase 1 clickable preview (Belanja).
