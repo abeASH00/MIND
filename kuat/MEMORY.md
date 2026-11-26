@@ -51,11 +51,12 @@ js/{app,ui,data,stats,exercise-data,exercises,figures,plans,workout,suggest,prog
 icons/, fonts/
 
 ## Log
-- 2026-11-27 (chat 1): set up folder, fonts, CSS, data.js. Session restarted mid-build; paused at 7am MYT per user. Auto-resume scheduled 2026-11-28 03:30 MYT.
+- 2026-11-27 (chat 1, 06:34–07:00 MYT): built most files. REMAINING: workout.js, progress.js, then sw.js FILES list, Playwright test, final report.
+- earlier same chat: set up folder, fonts, CSS, data.js. Session restarted mid-build; paused at 7am MYT per user. Auto-resume scheduled 2026-11-28 03:30 MYT.
 - ui.js exports: esc, html`` (auto-escape tag), raw, safeUrl, linkify, $, $$, icon(name), toast, openSheet, confirmSheet, closeTopSheet, unit/toDisplay/fromDisplay/fmtW/fmtBig/fmtDur/fmtClock/dayKey/metaJoin, beep, buzz, unlockAudio, keepAwake, setupKeyboardHandling, downloadBlob, emptyState, avatarHTML, revealSelectedPills.
 - data.js exports: getSettings/saveSettings/settingsNow, getKV/setKV, saveActiveSync/getActive/clearActive, sessions/plans/custom/exmeta/body/measure/photos CRUD, exportBackup/importBackup/resetAll, requestPersist, uid.
 - NEXT (app won't load until these exist — app.js imports them):
-  * js/home.js: renderHome(ctx) — search, hero (weekStreak), today/rest-day card, last session, 2 stat cards, coming up, quick tools, backup nudge, resume-workout card.
+  * (done) js/home.js — renderHome(ctx). Imports startWorkout(plan, day, ctx) from workout.js. Past-session search links to #/progress/day/YYYY-MM-DD (progress.js must handle tab 'day' + date param = ctx.params[1]).
   * js/workout.js: renderWorkout(ctx), restoreTimer(), startRest(sec,label) + global timer bar in #timer-slot (real-clock endAt in localStorage), active workout engine (saveActiveSync on every input), supersets, feel prompt, swap/add/remove, finish screen (newRecords), wake lock.
   * js/progress.js: renderProgress(ctx, tab) — overview week/month, per-exercise charts, PB list, calendar, body weight, measurements, photos.
   * Then: add new files to sw.js FILES, test in Playwright (mobile viewport, offline), final report.
