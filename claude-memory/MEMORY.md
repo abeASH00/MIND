@@ -1,6 +1,6 @@
 # Claude memory: read this first in every new chat
 
-Updated: 2026-11-27 06:40 MYT
+Updated: 2026-11-27 06:45 MYT
 
 ## About the user
 - Not a developer. Wants plain-word steps and complete copy-paste files, not diffs.
@@ -57,8 +57,9 @@ Updated: 2026-11-27 06:40 MYT
   Full plan and design decisions: finance-app/BUILD-PLAN.md. Read that before continuing.
 - WORK WINDOW: user wants the build to run 3:30am–7:00am Malaysia time and stop at 7am. A reminder
   is scheduled for 2026-11-28 03:30 MYT to resume. Commit + push after every file.
-- Build progress: util.js, calc.js, csv.js (Bluecoins import/export), smart.js (notification reader),
-  seed.js are done and tested in Node. Next: tests, db/store/cloud, UI, views, PWA files, Worker, SETUP.md, demo artifact.
+- Build progress (stopped 06:45 MYT 27 Nov): util.js, calc.js, csv.js (Bluecoins import/export), smart.js
+  (notification reader), seed.js, db.js done; 13 unit tests pass. Next: store.js, cloud.js, ui/charts/icons,
+  all views, index.html/css/manifest/sw, Worker + wrangler, SETUP.md, demo artifact.
 
 ### Open questions
 1. (answered: replace)
