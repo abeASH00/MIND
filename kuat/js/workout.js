@@ -215,9 +215,12 @@ function onTick(ctx, tick) {
   if (!st.done) { redraw(ctx); return; }
   // Superset: go straight to the partner's matching set, rest after the pair.
   const partner = we.ss ? A.exercises.find((x) => x.ss === we.ss && x.uid !== we.uid) : null;
-  const partnerPending = partner && partner.sets.findIndex((x) => !x.done);
+  // Superset rule: after a set of the FIRST exercise, go straight to the same set of the second
+  // (no rest). After the second exercise's set, rest, then start the next round.
+  const isFirst = partner && A.exercises.indexOf(we) < A.exercises.indexOf(partner);
+  const partnerPending = partner ? partner.sets.findIndex((x) => !x.done) : -1;
   const s = Data.settingsNow();
-  if (partner && partnerPending !== -1 && partnerPending <= Number(i) + (A.exercises.indexOf(we) < A.exercises.indexOf(partner) ? 0 : 1)) {
+  if (partner && partnerPending !== -1 && (isFirst || allDone)) {
     const pex = getExercise(partner.exId);
     toast(`Now: ${pex ? pex.name : 'next exercise'}, set ${partnerPending + 1}`);
     redraw(ctx);
@@ -322,7 +325,7 @@ function showSummary(ctx, session, count) {
       <div><div class="value">${fmtBig(session.totalKg)}</div><div class="label">${unit()} lifted</div></div>
       <div><div class="value">${session.exercises.reduce((n, e) => n + e.sets.length, 0)}</div><div class="label">sets</div></div></div></div>
     ${session.pbs.length ? html`<div class="card"><div class="kicker">Personal bests</div>${session.pbs.map((p) => html`<div class="kv"><span class="k">${icon('trophy', ' width="16" height="16"')}</span><span class="v" style="font-weight:500;text-align:left;flex:1">${pbText(p)}</span></div>`)}</div>` : ''}
-    <div class="card"><div class="kicker">What you did</div>${session.exercises.map((e) => { const ex = getExercise(e.exId) || { name: e.name, type: 'w' }; return html`<div class="kv"><span class="k">${ex.name}</span><span class="v">${e.sets.map((s) => ex.type === 'w' ? `${toDisplay(s.w)}×${s.r}` : `${s.r}${ex.type === 'time' ? 's' : ''}`).join(', ')}</span></div>`; })}</div>
+    <div class="card"><div class="kicker">What you did (weight × reps, ${unit()} per dumbbell)</div>${session.exercises.map((e) => { const ex = getExercise(e.exId) || { name: e.name, type: 'w' }; return html`<div class="kv"><span class="k">${ex.name}</span><span class="v">${e.sets.map((s) => ex.type === 'w' ? `${toDisplay(s.w)}×${s.r}` : `${s.r}${ex.type === 'time' ? 's' : ''}`).join(', ')}</span></div>`; })}</div>
     <div class="btn-row" style="margin-top:12px"><a class="btn ghost" href="#/tool/cooldown">${icon('leaf')} Cool-down</a><a class="btn" href="#/home">Done</a></div>
   `);
 }
