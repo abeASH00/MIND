@@ -76,7 +76,7 @@ export function confirmBox(message, { ok = 'OK', danger = false, title = 'Are yo
 /* ---------------- Badges ---------------- */
 
 export function badge(text, color = 'c0', size = 36) {
-  return `<span class="badge" style="--b:var(--${esc(color)});width:${size}px;height:${size}px;font-size:${Math.round(size * 0.36)}px" aria-hidden="true">${esc(text)}</span>`;
+  return `<span class="badge${color === 'c4' ? ' ink-dark' : ''}" style="--b:var(--${esc(color)});width:${size}px;height:${size}px;font-size:${Math.round(size * 0.36)}px" aria-hidden="true">${esc(text)}</span>`;
 }
 export function catBadge(t, size = 36) {
   if (t.type === 't') return `<span class="badge xf" style="width:${size}px;height:${size}px" aria-hidden="true">${icon('swap', Math.round(size * 0.5))}</span>`;
