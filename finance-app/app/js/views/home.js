@@ -31,7 +31,7 @@ function insights(p, txs, accMap, catMap, overall) {
   for (const c of a) {
     const before = b.get(c.id) || 0;
     const up = c.amount - before;
-    if (up >= 5000 && (before === 0 || up / before >= 0.25) && (!best || up > best.up)) best = { name: c.name, up };
+    if (before > 0 && up >= 5000 && up / before >= 0.25 && (!best || up > best.up)) best = { name: c.name, up };
   }
   if (best) out.push(`${best.name} is ${money(best.up)} higher than at this point last month.`);
   return out.slice(0, 2);

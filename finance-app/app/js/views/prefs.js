@@ -13,7 +13,7 @@ export const VERSION = '1.0.0';
 let healthMsg = '';
 
 function sw(id, on, label, sub = '') {
-  return `<label class="field" for="${id}"><span class="v" style="display:grid"><span>${label}</span>${sub ? `<span class="small muted" style="font-weight:400;white-space:normal">${sub}</span>` : ''}</span><span class="switch"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}><span></span></span></label>`;
+  return `<label class="field" for="${id}"><span class="v" style="display:grid"><span style="white-space:normal">${label}</span>${sub ? `<span class="small muted" style="font-weight:400;white-space:normal">${sub}</span>` : ''}</span><span class="switch"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}><span></span></span></label>`;
 }
 
 function render() {

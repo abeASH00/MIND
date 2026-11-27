@@ -57,7 +57,7 @@ function importCard() {
   if (r.error) return html + `<p style="color:var(--neg)" class="small">${esc(r.error)}</p><div class="row-btns"><button type="button" class="btn" data-act="cancelImp">Choose another file</button></div></div>`;
   const total = r.txs.length;
   html += `<div class="stack small" style="margin-top:12px">
-    <div><b>${total}</b> new transaction${total === 1 ? '' : 's'}${r.range ? ` from ${esc(shortDate(r.range.start, true))} to ${esc(shortDate(r.range.end, true))}` : ''}: ${r.counts.e} expenses, ${r.counts.i} income, ${r.counts.t} transfers.</div>
+    <div><b>${total}</b> new transaction${total === 1 ? '' : 's'}${r.range ? ` from ${esc(shortDate(r.range.start, true))} to ${esc(shortDate(r.range.end, true))}` : ''}: ${r.counts.e} expense${r.counts.e === 1 ? '' : 's'}, ${r.counts.i} income, ${r.counts.t} transfer${r.counts.t === 1 ? '' : 's'}.</div>
     ${r.skipped ? `<div>${r.skipped} already in Belanja, so they'll be skipped.</div>` : ''}
     ${r.newAccounts.length ? `<div>New accounts: ${r.newAccounts.map((a) => esc(a.name)).join(', ')}.</div>` : '<div>All accounts already exist.</div>'}
     ${r.newCategories.length ? `<div>${r.newCategories.length} new categor${r.newCategories.length === 1 ? 'y' : 'ies'}: ${r.newCategories.filter((c) => c.parentId).slice(0, 8).map((c) => esc(c.name)).join(', ')}${r.newCategories.length > 8 ? '…' : ''}.</div>` : ''}
@@ -67,7 +67,7 @@ function importCard() {
   </div>`;
   const used = new Set(r.txs.flatMap((t) => [t.categoryId, ...(t.splits || []).map((s) => s.categoryId)]));
   const extra = unusedDefaults(used);
-  if (extra.length) html += `<label class="field" style="padding:10px 0;border:0"><span class="v" style="display:grid"><span>Remove starting categories you don't use</span><span class="small muted" style="font-weight:400;white-space:normal">${extra.length} of Belanja's own categories have nothing in them after this import.</span></span><span class="switch"><input type="checkbox" id="imp-tidy" ${tidyDefaults ? 'checked' : ''}><span></span></span></label>`;
+  if (extra.length) html += `<label class="field" style="padding:10px 0;border:0"><span class="v" style="display:grid"><span style="white-space:normal">Remove starting categories you don't use</span><span class="small muted" style="font-weight:400;white-space:normal">${extra.length} of Belanja's own categories have nothing in them after this import.</span></span><span class="switch"><input type="checkbox" id="imp-tidy" ${tidyDefaults ? 'checked' : ''}><span></span></span></label>`;
   html += `<div class="row-btns"><button type="button" class="btn" data-act="cancelImp">Cancel</button><button type="button" class="btn primary" data-act="doImp" ${total || r.openings.length ? '' : 'disabled'}>${busy ? 'Importing…' : `Import ${total}`}</button></div></div>`;
   return html;
 }

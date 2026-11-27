@@ -94,7 +94,7 @@ export function makeSample(today, cats, accs, now = Date.now()) {
   }
   const openings = { 'RHB Bank': 520000, 'CIMB Bank': 180000, 'CIMB Petronas Visa-i': -42000, 'Affin Bank': 150000, TnG: 6000, SETEL: 4000, Wallet: 15000 };
   const budgets = [
-    [null, 280000], ['food', 90000], ['trans', 50000], ['shop', 30000], ['util', 30000],
+    [null, 450000], ['food', 110000], ['trans', 45000], ['shop', 30000], ['util', 30000],
   ].map(([pkey, amount]) => ({
     id: uid(), categoryId: pkey ? cats.find((c) => c.key === pkey)?.id : null, amount, sample: true, createdAt: now, updatedAt: now,
   }));

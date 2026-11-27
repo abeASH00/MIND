@@ -129,6 +129,9 @@ textarea.input { min-height: 110px; resize: vertical; }
 
 .seg-ctl { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--surface2); border-radius: 12px; padding: 4px; gap: 4px; }
 .seg-ctl button { padding: 8px 6px; border-radius: 9px; font-weight: 600; font-size: 13.5px; color: var(--muted); }
+.seg-ctl.scroll { grid-auto-columns: max-content; overflow-x: auto; scrollbar-width: none; }
+.seg-ctl.scroll::-webkit-scrollbar { display: none; }
+.seg-ctl.scroll button { white-space: nowrap; padding: 8px 12px; }
 .seg-ctl button.on { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 5px 10px; border-radius: 99px; background: var(--surface2); border: 1px solid var(--line); font-weight: 500; max-width: 100%; }

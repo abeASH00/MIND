@@ -213,6 +213,7 @@ async function boot() {
   capture.tidyInbox();
   st.onChange((what) => {
     if (what === 'settings') applyTheme();
+    if (st.S.inbox.some((i) => !i.parsed)) capture.prepareInbox().then(scheduleRender);
     scheduleRender();
   });
   app.refresh = () => render();

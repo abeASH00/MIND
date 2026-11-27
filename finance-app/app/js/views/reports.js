@@ -52,13 +52,14 @@ function flow() {
   const s = periodSeries(st.txs(), st.idx().acc, last, months, o, baseCur());
   const labels = s.map((x) => MON[Number(x.p.end.slice(5, 7)) - 1]);
   const titles = s.map((x) => periodLabel(x.p, o));
+  const short = s.map((x) => `${MON[Number(x.p.end.slice(5, 7)) - 1]} ${x.p.end.slice(0, 4)}`);
   const t = s.reduce((a, x) => ({ income: a.income + x.income, expense: a.expense + x.expense }), { income: 0, expense: 0 });
   return `<div class="stats"><div class="stat"><div class="d">In over ${months} months</div><div class="v num">${money(t.income)}</div></div><div class="stat"><div class="d">Out over ${months} months</div><div class="v num">${money(t.expense)}</div></div></div>
     <div class="card" style="margin-top:10px">${columns({ labels, titles, label: 'Income and spending by month', series: [{ name: 'Income', color: 'inc', values: s.map((x) => x.income) }, { name: 'Spent', color: 'exp', values: s.map((x) => x.expense) }] })}</div>
     <div class="card tbl-wrap" style="margin-top:10px"><table class="tbl"><thead><tr><th>Month</th><th>In</th><th>Out</th><th>Left over</th></tr></thead><tbody>${s
       .slice()
       .reverse()
-      .map((x, i) => `<tr><td>${esc(titles[titles.length - 1 - i])}</td><td>${money(x.income)}</td><td>${money(x.expense)}</td><td style="${x.income - x.expense < 0 ? 'color:var(--neg)' : ''}">${money(x.income - x.expense)}</td></tr>`)
+      .map((x, i) => `<tr><td>${esc(short[short.length - 1 - i])}</td><td>${money(x.income)}</td><td>${money(x.expense)}</td><td style="${x.income - x.expense < 0 ? 'color:var(--neg)' : ''}">${money(x.income - x.expense)}</td></tr>`)
       .join('')}</tbody></table></div>`;
 }
 
@@ -76,7 +77,7 @@ function worth() {
     <div class="card tbl-wrap" style="margin-top:10px"><table class="tbl"><thead><tr><th>Month end</th><th>Have</th><th>Owe</th><th>Net worth</th></tr></thead><tbody>${s
       .slice()
       .reverse()
-      .map((x) => `<tr><td>${esc(periodLabel(x.p, o))}</td><td>${money(x.assets)}</td><td>${money(-x.liabilities)}</td><td>${money(x.net)}</td></tr>`)
+      .map((x) => `<tr><td>${esc(MON[Number(x.p.end.slice(5, 7)) - 1] + ' ' + x.p.end.slice(0, 4))}</td><td>${money(x.assets)}</td><td>${money(-x.liabilities)}</td><td>${money(x.net)}</td></tr>`)
       .join('')}</tbody></table></div>`;
 }
 
@@ -92,7 +93,7 @@ function labels() {
 function render() {
   if (!p) p = periodFor('month', app.today, opts());
   let html = `<header class="top"><button type="button" class="iconbtn" data-act="back" aria-label="Back">${icon('back')}</button><div class="top-t"><h1>Reports</h1></div></header>
-    <div class="seg-ctl" style="margin-bottom:12px;overflow-x:auto">${TABS.map(([k, v]) => `<button type="button" class="${tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${v}</button>`).join('')}</div>`;
+    <div class="seg-ctl scroll" style="margin-bottom:12px">${TABS.map(([k, v]) => `<button type="button" class="${tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${v}</button>`).join('')}</div>`;
   if (tab === 'flow' || tab === 'worth') html += `<div class="seg-ctl" style="margin-bottom:12px">${[6, 12].map((n) => `<button type="button" class="${months === n ? 'on' : ''}" data-act="months" data-v="${n}">Last ${n} months</button>`).join('')}</div>`;
   else html += periodBar(periodLabel(p, opts()));
   if (tab === 'spend') html += categories('expense');
