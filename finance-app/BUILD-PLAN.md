@@ -61,5 +61,5 @@ Everything in the original plan is built, tested and pushed:
 ## Ideas for next (ask the user first)
 - Real-world check once the user deploys: MacroDroid message formats from their actual bank apps
   (tune `smart.js` keyword/regex lists with real samples), and their real Bluecoins export columns.
-- Screen to see/forget "shops Belanja remembers" (merchant memory).
+- (Done) Categories › Shops: see and forget the shops Belanja has learned.
 - Move the app into its own GitHub repo (e.g. abeash00/belanja) instead of the MIND fork.

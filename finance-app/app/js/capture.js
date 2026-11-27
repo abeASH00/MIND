@@ -10,7 +10,7 @@ import { app } from './app.js';
 
 const server = () => String(st.S.settings.server || '').trim().replace(/\/+$/, '');
 export const serverReady = () => !app.demo && !!st.S.settings.appKey;
-const ctx = () => ({ accounts: st.S.accounts, categories: st.S.categories, memory: st.S.memory });
+const ctx = () => ({ accounts: st.S.accounts, categories: st.S.categories, memory: st.S.memory.filter((m) => !m.deleted) });
 
 async function call(path, init = {}) {
   let res;

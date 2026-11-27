@@ -141,7 +141,7 @@ export const outbox = {
 /* ---------------- Learning shops ---------------- */
 
 export async function remember(merchant, categoryId, accountId) {
-  const rec = learn(S.memory, merchant, categoryId, accountId);
+  const rec = learn(S.memory.filter((m) => !m.deleted), merchant, categoryId, accountId);
   if (rec) await save('memory', rec, { quiet: true });
 }
 

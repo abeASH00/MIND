@@ -16,8 +16,9 @@ function uses(id) {
 function render() {
   const ps = st.parents(kind);
   let html = `<header class="top"><button type="button" class="iconbtn" data-act="back" aria-label="Back">${icon('back')}</button><div class="top-t"><h1>Categories</h1></div>
-    <div class="top-r"><button type="button" class="iconbtn" data-act="addGroup" aria-label="Add a group">${icon('plus', 20)}</button></div></header>
-    <div class="seg-ctl" style="margin-bottom:12px"><button type="button" class="${kind === 'expense' ? 'on' : ''}" data-act="kind" data-v="expense">Spending</button><button type="button" class="${kind === 'income' ? 'on' : ''}" data-act="kind" data-v="income">Income</button></div>`;
+    <div class="top-r">${kind !== 'shops' ? `<button type="button" class="iconbtn" data-act="addGroup" aria-label="Add a group">${icon('plus', 20)}</button>` : ''}</div></header>
+    <div class="seg-ctl" style="margin-bottom:12px"><button type="button" class="${kind === 'expense' ? 'on' : ''}" data-act="kind" data-v="expense">Spending</button><button type="button" class="${kind === 'income' ? 'on' : ''}" data-act="kind" data-v="income">Income</button><button type="button" class="${kind === 'shops' ? 'on' : ''}" data-act="kind" data-v="shops">Shops</button></div>`;
+  if (kind === 'shops') return html + shops();
   for (const p of ps) {
     const kids = st.children(p.id);
     html += `<div class="list" style="margin-bottom:10px"><button type="button" class="row" data-act="edit" data-id="${p.id}">${badge(initials(p.name), p.color || 'c0')}<div class="meta"><div class="t">${esc(p.name)}</div><div class="s">${kids.length} inside</div></div>${icon('edit', 16)}</button>
@@ -26,6 +27,14 @@ function render() {
   }
   if (!ps.length) html += `<div class="empty">No ${kind === 'income' ? 'income' : 'spending'} categories yet. Tap + to add a group.</div>`;
   return html;
+}
+
+// Shops Belanja has learned: next time a payment comes from one, the category is filled in.
+function shops() {
+  const list = st.S.memory.filter((m) => !m.deleted && st.idx().cat.get(m.categoryId)).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  if (!list.length) return `<div class="card"><div class="empty" style="padding:10px">No shops learned yet. When you save a payment, Belanja remembers the shop and its category for next time.</div></div>`;
+  return `<p class="muted small" style="margin:0 0 10px">When a payment comes from one of these shops, Belanja fills in the category for you. Forget a shop to stop that.</p>
+    <div class="list">${list.map((m) => `<div class="row"><span class="dot" style="--b:var(--${esc(st.catColor(m.categoryId))})"></span><div class="meta"><div class="t">${esc(m.name)}</div><div class="s">${esc(st.catLabel(m.categoryId, true))}${st.accName(m.accountId) ? ' · ' + esc(st.accName(m.accountId)) : ''} · ${m.count} time${m.count === 1 ? '' : 's'}</div></div><button type="button" class="btn ghost" data-act="forget" data-id="${esc(m.id)}">Forget</button></div>`).join('')}</div>`;
 }
 
 function editSheet(c, isNew = false) {
@@ -96,6 +105,11 @@ export default {
   parent: '#more',
   actions: {
     kind: (b) => { kind = b.dataset.v; app.refresh(); },
+    forget: async (b) => {
+      const m = st.S.memory.find((x) => x.id === b.dataset.id);
+      await st.remove('memory', m.id);
+      toast(`Forgot ${m.name}`, { label: 'Undo', run: () => st.save('memory', { ...m, deleted: false }) });
+    },
     edit: (b) => editSheet(st.idx().cat.get(b.dataset.id)),
     addGroup: () => editSheet({ kind, name: '', parentId: null, color: COLORS[st.parents(kind).length % 8], order: st.parents(kind).length }, true),
     addChild: (b) => editSheet({ kind, name: '', parentId: b.dataset.id, color: st.idx().cat.get(b.dataset.id)?.color, order: st.children(b.dataset.id).length }, true),
