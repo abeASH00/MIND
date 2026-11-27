@@ -59,7 +59,7 @@ export async function renderHome(ctx) {
 
   let lastCard = '';
   if (last) {
-    const vol = last.totalKg ?? sessionVolume(last, getExercise);
+    const vol = last.totalKg || sessionVolume(last, getExercise);
     lastCard = html`<div class="card"><div class="card-head"><div><div class="kicker">Last session</div><h3>${last.dayName || 'Workout'}</h3></div><span class="meta">${fmtDate(last.startedAt)}</span></div>
       <p class="meta">${raw(metaJoin([last.exercises.map((e) => (getExercise(e.exId) || { name: e.name || 'Exercise' }).name).slice(0, 4).join(', ') + (last.exercises.length > 4 ? '…' : '')]))}</p>
       <div class="summary-big"><div><div class="value">${fmtDur(last.duration || 0)}</div><div class="label">time</div></div><div><div class="value">${fmtBig(vol)}</div><div class="label">${unit()} lifted</div></div><div><div class="value">${(last.pbs || []).length}</div><div class="label">beaten</div></div></div>
@@ -71,7 +71,7 @@ export async function renderHome(ctx) {
     <div id="home-results"></div>
     <div id="home-main">
       <div class="hero">
-        <div class="avatar" aria-hidden="true">${avatarHTML(s)}</div>
+        <div class="hero-av" aria-hidden="true">${avatarHTML(s)}</div>
         <div class="hello">${greeting(s.name)}</div>
         <div><span class="big">${streak}</span><span class="unit">${streak === 1 ? 'week' : 'weeks'} streak</span></div>
         <div class="line">${streakLine(streak, week.length > 0)}</div>

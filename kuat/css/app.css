@@ -102,7 +102,7 @@ img { max-width: 100%; display: block; }
   max-width: 640px; margin: 0 auto;
   padding: calc(var(--safe-t) + 18px) 16px calc(var(--nav-h) + 40px + var(--safe-b));
 }
-body.kb-open #view { padding-bottom: 24px; }
+body.kb-open #view { padding-bottom: 55vh; } /* room so the last row can scroll above the keyboard */
 .page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 2px 14px; }
 .page-head .sub { margin-top: 4px; }
 .back-btn { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; color: var(--muted); padding: 6px 0; margin-bottom: 4px; font-size: 15px; font-weight: 500; }
@@ -141,7 +141,7 @@ body.kb-open #view { padding-bottom: 24px; }
 .hero .unit { font-size: 15px; font-weight: 700; opacity: .92; margin-left: 6px; }
 .hero .line { margin-top: 8px; font-size: 16px; font-weight: 500; max-width: 30ch; position: relative; z-index: 1; }
 .hero .hello { font-size: 14px; font-weight: 700; opacity: .9; margin-bottom: 6px; }
-.hero .avatar { position: absolute; right: 18px; top: 18px; z-index: 1; }
+.hero .hero-av { position: absolute; right: 18px; top: 18px; z-index: 1; }
 
 .stat { padding: 14px; }
 .stat .value { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
@@ -428,7 +428,7 @@ body.kb-open .nav { display: none; }
 .privacy-note { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
 .privacy-note svg { width: 22px; height: 22px; color: var(--teal); flex: none; margin-top: 1px; }
 .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.tool { border: 1px solid var(--card-border); background: var(--card); border-radius: 22px; padding: 14px; text-align: left; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 8px; min-height: 96px; color: var(--text); }
+.tool { text-decoration: none; border: 1px solid var(--card-border); background: var(--card); border-radius: 22px; padding: 14px; text-align: left; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 8px; min-height: 96px; color: var(--text); }
 .tool svg { width: 26px; height: 26px; color: var(--accent); }
 .tool b { font-size: 15px; }
 .tool .meta { margin-top: -4px; }

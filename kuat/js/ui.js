@@ -253,10 +253,21 @@ export function setupKeyboardHandling() {
     const shrunk = vv ? (window.innerHeight - vv.height > 120) : false;
     document.body.classList.toggle('kb-open', !!(typing && (shrunk || matchMedia('(pointer: coarse)').matches)));
   };
+  // Keep the field (and for workouts, its whole set row) inside the part of the screen the
+  // keyboard isn't covering. iPhones don't shrink the page for the keyboard, so we measure
+  // the visible area (visualViewport) rather than trusting the window size.
   const reveal = (el) => {
-    if (!el || !el.scrollIntoView) return;
+    if (!el || !el.getBoundingClientRect) return;
     const row = el.closest('.set-row') || el;
-    setTimeout(() => row.scrollIntoView({ block: 'center', behavior: 'smooth' }), 280);
+    const fix = () => {
+      if (document.activeElement !== el) return;
+      const r = row.getBoundingClientRect();
+      const visH = vv ? vv.height : window.innerHeight;
+      const top = 70, bottom = visH - 16;
+      if (r.top < top || r.bottom > bottom) window.scrollBy({ top: r.top - Math.max(top, (visH - r.height) / 2), behavior: 'smooth' });
+    };
+    setTimeout(fix, 300);
+    setTimeout(fix, 650); // again once the keyboard has finished sliding up
   };
   document.addEventListener('focusin', (e) => { update(); if (e.target.matches('input, textarea')) reveal(e.target); });
   document.addEventListener('focusout', () => setTimeout(update, 60));

@@ -68,11 +68,28 @@ function readKV(key) {
   });
 }
 
+function writeKV(key, value) {
+  return new Promise((resolve) => {
+    const open = indexedDB.open('kuat');
+    open.onerror = () => resolve();
+    open.onsuccess = () => {
+      try {
+        const db = open.result;
+        const t = db.transaction('kv', 'readwrite');
+        t.objectStore('kv').put(value, key);
+        t.oncomplete = () => { db.close(); resolve(); };
+        t.onerror = () => { db.close(); resolve(); };
+      } catch { resolve(); }
+    };
+  });
+}
+
 async function maybeRemind() {
   const info = await readKV('reminderInfo');
   if (!info || !info.enabled) return;
   const now = new Date();
-  const today = now.toISOString().slice(0, 10);
+  const pad = (n) => String(n).padStart(2, '0');
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   const [hh, mm] = String(info.time || '18:00').split(':').map(Number);
   if (!Array.isArray(info.days) || !info.days.includes(now.getDay())) return;
   if (now.getHours() * 60 + now.getMinutes() < hh * 60 + mm) return;
@@ -81,6 +98,7 @@ async function maybeRemind() {
     body: 'There’s a workout planned for today, whenever suits you.',
     icon: './icons/icon-192.png', badge: './icons/favicon-32.png', tag: 'kuat-reminder',
   });
+  await writeKV('reminderInfo', { ...info, lastNotified: today });
 }
 
 self.addEventListener('periodicsync', (event) => {

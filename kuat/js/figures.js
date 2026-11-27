@@ -32,10 +32,10 @@ export const POSES = {
   splitBottom: { h: [81, 37], n: [80, 46], p: [76, 78], a: [79, 62, 80, 78], l: [96, 82, 94, 108], l2: [62, 96, 48, 80], db: 'both', chair: 20 },
   stepStart: { h: [77, 22], n: [76, 31], p: [72, 63], a: [75, 47, 76, 63], l: [92, 54, 100, 80], l2: [72, 86, 72, 108], db: 'both', chair: 90 },
   stepTop: { h: [100, -5], n: [100, 4], p: [100, 36], a: [101, 20, 102, 36], l: [101, 58, 100, 80], l2: [97, 58, 96, 80], db: 'both', chair: 90 },
-  rowDown: { h: [113, 50], n: [104, 52], p: [66, 58], s: [104, 54], a: [99, 68, 98, 84], a2: [106, 66, 108, 80], l: [62, 84, 58, 108], l2: [90, 66, 92, 80], db: 'one', chair: 86 },
-  rowUp: { h: [113, 50], n: [104, 52], p: [66, 58], s: [104, 54], a: [88, 50, 94, 63], a2: [106, 66, 108, 80], l: [62, 84, 58, 108], l2: [90, 66, 92, 80], db: 'one', chair: 86 },
-  kickbackBent: { h: [113, 50], n: [104, 52], p: [66, 58], s: [104, 54], a: [88, 54, 88, 70], a2: [106, 66, 108, 80], l: [62, 84, 58, 108], l2: [90, 66, 92, 80], db: 'one', chair: 86 },
-  kickbackStraight: { h: [113, 50], n: [104, 52], p: [66, 58], s: [104, 54], a: [88, 54, 72, 56], a2: [106, 66, 108, 80], l: [62, 84, 58, 108], l2: [90, 66, 92, 80], db: 'one', chair: 86 },
+  rowDown: { h: [121, 55], n: [112, 58], p: [78, 62], s: [112, 60], a2: [116, 70, 118, 79], l: [72, 85, 68, 108], l2: [100, 78, 124, 78], chair: 96, chairR: true, a: [106, 74, 104, 90], db: 'one' },
+  rowUp: { h: [121, 55], n: [112, 58], p: [78, 62], s: [112, 60], a2: [116, 70, 118, 79], l: [72, 85, 68, 108], l2: [100, 78, 124, 78], chair: 96, chairR: true, a: [96, 52, 101, 66], db: 'one' },
+  kickbackBent: { h: [121, 55], n: [112, 58], p: [78, 62], s: [112, 60], a2: [116, 70, 118, 79], l: [72, 85, 68, 108], l2: [100, 78, 124, 78], chair: 96, chairR: true, a: [96, 58, 96, 74], db: 'one' },
+  kickbackStraight: { h: [121, 55], n: [112, 58], p: [78, 62], s: [112, 60], a2: [116, 70, 118, 79], l: [72, 85, 68, 108], l2: [100, 78, 124, 78], chair: 96, chairR: true, a: [96, 58, 80, 60], db: 'one' },
   bentRowDown: { h: [108, 34], n: [100, 40], p: [70, 64], a: [99, 56, 98, 72], l: [78, 86, 76, 108], l2: [75, 86, 73, 108], db: 'both' },
   bentRowUp: { h: [108, 34], n: [100, 40], p: [70, 64], a: [84, 46, 88, 60], l: [78, 86, 76, 108], l2: [75, 86, 73, 108], db: 'both' },
   reverseFlyUp: { h: [108, 34], n: [100, 40], p: [70, 64], a: [96, 46, 102, 46], a2: [92, 38, 96, 32], l: [78, 86, 76, 108], l2: [75, 86, 73, 108], db: 'both' },
@@ -86,9 +86,10 @@ function dumbbell(x, y, vertical = false) {
   return `<g class="dbl"><rect x="${r(x - 8)}" y="${r(y - 1.5)}" width="16" height="3" rx="1"/><rect x="${r(x - 9)}" y="${r(y - 5)}" width="4" height="10" rx="1.5"/><rect x="${r(x + 5)}" y="${r(y - 5)}" width="4" height="10" rx="1.5"/></g>`;
 }
 
-function chairSVG(cx) {
-  // Seat from cx to cx + 30 at y 80, backrest on the left edge.
-  return `<g class="prop">${line([cx, 80], [cx + 30, 80])}${line([cx + 2, 80], [cx + 2, 108])}${line([cx + 28, 80], [cx + 28, 108])}${line([cx + 2, 80], [cx + 2, 48])}</g>`;
+function chairSVG(cx, right = false) {
+  // Seat from cx to cx + 30 at y 80, backrest on the left edge (or the right edge when right = true).
+  const bx = right ? cx + 28 : cx + 2;
+  return `<g class="prop">${line([cx, 80], [cx + 30, 80])}${line([cx + 2, 80], [cx + 2, 108])}${line([cx + 28, 80], [cx + 28, 108])}${line([bx, 80], [bx, 48])}</g>`;
 }
 
 function figure(pose, ghost = false) {
@@ -130,7 +131,7 @@ export function exerciseFigure(ex, { small = false } = {}) {
   s += `<style>.far{opacity:.45}.prop{opacity:.5;stroke-width:2.5}.dbl rect{fill:currentColor;stroke:none}.fig-ghost{opacity:.25}.head{fill:none}</style>`;
   s += `<line x1="4" y1="109.5" x2="156" y2="109.5" stroke-width="1.5" opacity=".3"/>`;
   if (mat) s += `<rect x="14" y="108" width="132" height="3" rx="1.5" fill="currentColor" stroke="none" opacity=".18"/>`;
-  if (chair !== undefined) s += chairSVG(chair);
+  if (chair !== undefined) s += chairSVG(chair, !!(pb.chairR || pa.chairR));
   if (a !== b && !small) s += figure(pa, true);
   s += figure(small ? pb : pb);
   s += '</svg>';

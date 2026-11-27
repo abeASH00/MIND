@@ -146,7 +146,7 @@ function daySheet(k, sessions, ctx) {
   openSheet({
     title: fmtDateLong(parseDayKey(k)), cancelLabel: 'Close',
     body: list.length ? String(html`${list.map((s) => html`<div class="card flat" style="border:1px solid var(--line)"><h3>${s.dayName || 'Workout'}</h3>
-      <p class="meta">${raw(metaJoin([fmtDur(s.duration || 0), `${fmtBig(s.totalKg ?? sessionVolume(s, getExercise))} ${unit()} lifted`, (s.pbs || []).length ? `${s.pbs.length} PB${s.pbs.length === 1 ? '' : 's'}` : '']))}</p>
+      <p class="meta">${raw(metaJoin([fmtDur(s.duration || 0), `${fmtBig(s.totalKg || sessionVolume(s, getExercise))} ${unit()} lifted`, (s.pbs || []).length ? `${s.pbs.length} PB${s.pbs.length === 1 ? '' : 's'}` : '']))}</p>
       ${s.exercises.map((e) => { const ex = getExercise(e.exId) || { name: e.name || 'Exercise', type: 'w' }; return html`<div class="kv"><span class="k">${ex.name}</span><span class="v">${e.sets.map((x) => ex.type === 'w' ? `${toDisplay(x.w)}×${x.r}` : `${x.r}${ex.type === 'time' ? 's' : ''}`).join(', ')}</span></div>`; })}
       <button type="button" class="link-btn" data-del="${s.id}" style="color:var(--danger);margin-top:6px">Delete this session</button></div>`)}`)
       : '<p class="meta">No workout logged on this day. Rest days count too.</p>',

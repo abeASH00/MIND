@@ -22,7 +22,7 @@ export const GEAR = [
   { id: 'db', name: 'Dumbbells' },
   { id: 'mat', name: 'Mat' },
   { id: 'chair', name: 'Chair' },
-  { id: 'none', name: 'No gear' },
+  { id: 'nodb', name: 'No dumbbells' },
 ];
 
 export const EXERCISES = [

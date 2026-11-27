@@ -1,7 +1,7 @@
 // Kuat — charts drawn by hand as inline SVG. No chart library, nothing loaded from outside.
 import { esc, toDisplay, unit, fmtDate } from './ui.js';
 
-const W = 320, H = 170, PL = 34, PR = 10, PT = 12, PB = 24;
+const W = 320, H = 180, PL = 34, PR = 10, PT = 22, PB = 24;
 
 function niceTicks(min, max, n = 4) {
   if (min === max) { min -= 1; max += 1; }
@@ -36,7 +36,7 @@ export function lineChart(points, { unitKg = false, pbIndex = -1, second = null,
   points.forEach((p, i) => { s += `<circle class="${i === pbIndex ? 'pb' : 'dot'}" cx="${sx(p.x).toFixed(1)}" cy="${sy(conv(p.y)).toFixed(1)}" r="${i === pbIndex ? 5.5 : 3.5}"/>`; });
   s += `<text x="${PL}" y="${H - 6}">${esc(fmtDate(x0))}</text>`;
   if (x1 !== x0) s += `<text x="${W - PR}" y="${H - 6}" text-anchor="end">${esc(fmtDate(x1))}</text>`;
-  if (unitKg) s += `<text x="${PL - 6}" y="${PT - 2}" text-anchor="end">${esc(unit())}</text>`;
+  if (unitKg) s += `<text x="${PL - 6}" y="9" text-anchor="end">${esc(unit())}</text>`;
   s += '</svg>';
   return s;
 }

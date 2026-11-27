@@ -68,7 +68,7 @@ export function totals(list, lookup) {
   let kg = 0, sec = 0, sets = 0;
   const parts = {};
   for (const s of list) {
-    kg += s.totalKg ?? sessionVolume(s, lookup);
+    kg += s.totalKg || sessionVolume(s, lookup);
     sec += s.duration || 0;
     for (const e of s.exercises || []) {
       const ex = lookup(e.exId);

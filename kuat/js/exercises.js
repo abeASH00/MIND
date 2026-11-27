@@ -33,15 +33,16 @@ function gearLine(ex) { const names = (ex.gear || []).map((g) => (GEAR.find((x) 
 // ---------- Library list ----------
 const state = { part: 'all', gear: 'all', q: '', open: new Set() };
 
-export function renderLibrary(ctx) {
+export async function renderLibrary(ctx) {
+  const logged = new Set((await Data.listSessions()).flatMap((s) => s.exercises.map((e) => e.exId)));
   const list = allExercises().filter((ex) =>
     (state.part === 'all' || (state.part === 'fav' ? isFav(ex.id) : ex.part === state.part)) &&
-    (state.gear === 'all' || (state.gear === 'none' ? !(ex.gear || []).length : (ex.gear || []).includes(state.gear))) &&
+    (state.gear === 'all' || (state.gear === 'nodb' ? !(ex.gear || []).includes('db') : (ex.gear || []).includes(state.gear))) &&
     (!state.q || ex.name.toLowerCase().includes(state.q) || partName(ex.part).toLowerCase().includes(state.q)));
   const groups = PARTS.map((p) => ({ ...p, items: list.filter((e) => e.part === p.id).sort((a, b) => a.name.localeCompare(b.name)) })).filter((g) => g.items.length);
   const filtering = state.part !== 'all' || state.gear !== 'all' || state.q;
   ctx.mount(html`
-    <div class="page-head"><div><h1>Exercises</h1><div class="meta sub">${allExercises().length} moves for dumbbells, a mat and a chair.</div></div></div>
+    <div class="page-head"><div><h1>Exercises</h1><div class="meta sub">${allExercises().length} moves for dumbbells, a mat and a chair. Group counts show how many you’ve tried.</div></div></div>
     <div class="search" style="margin-bottom:12px">${icon('search')}<input class="input" type="search" id="lib-q" placeholder="Search exercises" value="${state.q}" autocomplete="off" enterkeyhint="search"></div>
     <div class="pills" role="tablist" aria-label="Body part">
       ${[{ id: 'all', name: 'All' }, { id: 'fav', name: '★ Favourites' }, ...PARTS].map((p) => html`<button class="pill ${state.part === p.id ? 'on' : ''}" data-act="part" data-v="${p.id}" aria-pressed="${state.part === p.id}">${p.name}</button>`)}
@@ -51,9 +52,9 @@ export function renderLibrary(ctx) {
     </div>
     ${groups.length ? html`<div class="list">${groups.map((g) => {
       const open = filtering || state.open.has(g.id);
-      const favs = g.items.filter((e) => isFav(e.id)).length;
+      const tried = g.items.filter((e) => logged.has(e.id)).length;
       return html`<div class="group ${open ? 'open' : ''}">
-        <button class="group-head" data-act="toggle" data-v="${g.id}" aria-expanded="${open}">${g.name}<span class="count">${favs ? `★ ${favs} · ` : ''}${g.items.length}</span>${icon('chev', ' class="chev"')}</button>
+        <button class="group-head" data-act="toggle" data-v="${g.id}" aria-expanded="${open}">${g.name}<span class="count" title="Tried / total">${tried}/${g.items.length}</span>${icon('chev', ' class="chev"')}</button>
         <div class="group-body">${g.items.map((ex) => html`
           <a class="item" href="#/exercise/${encodeURIComponent(ex.id)}">
             <div class="lead fig">${raw(exerciseFigure(ex, { small: true }))}</div>
@@ -65,7 +66,7 @@ export function renderLibrary(ctx) {
   `);
   revealSelectedPills(ctx.view);
   const q = $('#lib-q', ctx.view);
-  q.addEventListener('input', () => { state.q = q.value.trim().toLowerCase(); const pos = q.selectionStart; renderLibrary(ctx); const n = $('#lib-q', ctx.view); n.focus(); try { n.setSelectionRange(pos, pos); } catch { /* ignore */ } });
+  q.addEventListener('input', async () => { state.q = q.value.trim().toLowerCase(); const pos = q.selectionStart; await renderLibrary(ctx); const n = $('#lib-q', ctx.view); n.focus(); try { n.setSelectionRange(pos, pos); } catch { /* ignore */ } });
   ctx.on('part', (b) => { state.part = b.dataset.v; renderLibrary(ctx); });
   ctx.on('gear', (b) => { state.gear = b.dataset.v; renderLibrary(ctx); });
   ctx.on('toggle', (b) => { const id = b.dataset.v; state.open.has(id) ? state.open.delete(id) : state.open.add(id); b.closest('.group').classList.toggle('open'); b.setAttribute('aria-expanded', state.open.has(id)); });
@@ -147,7 +148,7 @@ function customSheet(ctx, existing = null) {
       <label class="field"><span>Dumbbells used</span><select class="input" name="dbs">
         <option value="2" ${c.dbs === 2 ? 'selected' : ''}>Both (a pair)</option><option value="1" ${c.dbs === 1 ? 'selected' : ''}>One</option><option value="0" ${c.dbs === 0 ? 'selected' : ''}>None</option></select></label>
       <div class="field-label">Gear needed</div>
-      <div class="card flat" style="padding:4px 14px;margin-bottom:14px">${GEAR.filter((g) => g.id !== 'none').map((g) => html`<label class="check"><input type="checkbox" name="gear" value="${g.id}" ${c.gear.includes(g.id) ? 'checked' : ''}> ${g.name}</label>`)}</div>
+      <div class="card flat" style="padding:4px 14px;margin-bottom:14px">${GEAR.filter((g) => g.id !== 'nodb').map((g) => html`<label class="check"><input type="checkbox" name="gear" value="${g.id}" ${c.gear.includes(g.id) ? 'checked' : ''}> ${g.name}</label>`)}</div>
       <label class="field"><span>What it trains (optional)</span><input class="input" name="trains" maxlength="200" value="${c.trains}"></label>
       <label class="field"><span>How to do it (optional, one step per line)</span><textarea class="input" name="how" maxlength="2000">${c.how}</textarea></label>`,
     onSave: async (el) => {

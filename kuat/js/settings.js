@@ -243,7 +243,8 @@ export async function syncReminderInfo() {
   const plan = await activePlan();
   const sessions = await Data.listSessions();
   const last = sessions.length ? dayKey(sessions[sessions.length - 1].startedAt) : '';
-  const info = { enabled: !!s.reminders.enabled, time: s.reminders.time, days: plan ? plan.days.map((x) => x.weekday) : [], lastTrained: last };
+  const prev = (await Data.getKV('reminderInfo')) || {};
+  const info = { enabled: !!s.reminders.enabled, time: s.reminders.time, days: plan ? plan.days.map((x) => x.weekday) : [], lastTrained: last, lastNotified: prev.lastNotified || '' };
   await Data.setKV('reminderInfo', info);
   clearTimeout(reminderTimer);
   if (!info.enabled) return;

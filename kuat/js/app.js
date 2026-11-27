@@ -54,7 +54,7 @@ async function route() {
     switch (name) {
       case 'home': await renderHome(ctx); break;
       case 'workout': await renderWorkout(ctx); break;
-      case 'exercises': renderLibrary(ctx); break;
+      case 'exercises': await renderLibrary(ctx); break;
       case 'exercise': await renderExercise(ctx, parts[1]); break;
       case 'progress': await renderProgress(ctx, parts[1]); break;
       case 'more': await renderMore(ctx); break;
