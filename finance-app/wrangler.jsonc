@@ -1,0 +1,17 @@
+// Cloudflare settings for the Belanja server. Cloudflare reads this when it deploys from GitHub.
+// Secrets (APP_KEY, ANTHROPIC_API_KEY) are NOT here: add them in the Cloudflare dashboard.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "belanja",
+  "main": "worker/index.js",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // The app's own files, served at the same address as the server.
+  "assets": { "directory": "./app", "binding": "ASSETS" },
+  // Where forwarded notifications wait until the app collects them.
+  "durable_objects": { "bindings": [{ "name": "INBOX", "class_name": "Inbox" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Inbox"] }],
+  // Which Claude model reads receipts and unclear messages. claude-haiku-5-5 costs far less.
+  "vars": { "MODEL": "claude-opus-5-5" },
+  "observability": { "enabled": true }
+}
