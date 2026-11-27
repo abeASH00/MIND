@@ -1,6 +1,6 @@
 # Claude memory: read this first in every new chat
 
-Updated: 2026-11-28 04:00 MYT
+Updated: 2026-11-28 04:05 MYT
 
 ## About the user
 - Not a developer. Wants plain-word steps and complete copy-paste files, not diffs.
@@ -55,14 +55,17 @@ Updated: 2026-11-28 04:00 MYT
 - 2026-11-26/27: User asked for a COMPLETE app that does everything Bluecoins does, plus their smart
   features ("use as many tokens as you need"). Own name, look and code; nothing copied from Bluecoins.
   Full plan and design decisions: finance-app/BUILD-PLAN.md. Read that before continuing.
-- WORK WINDOW: user wants the build to run 3:30am–7:00am Malaysia time and stop at 7am. A reminder
-  is scheduled for 2026-11-28 03:30 MYT to resume. Commit + push after every file.
+- WORK WINDOW (if the user asks for overnight work again): 3:30am–7:00am Malaysia time, stop at 7am.
+  Commit + push after every file.
 - 28 Nov 3:30–4:00am MYT: FIRST FULL VERSION DONE and pushed (branch ccr-78abda8d-frt4ra, folder finance-app/).
   All screens, offline install, share target, Cloudflare server, SETUP.md. Demo with example data:
   https://claude.ai/artifact/16JTfHjTjvdRvQnCYcTcV7 . See finance-app/BUILD-PLAN.md "Status" for details.
 - NEXT for the user: follow finance-app/SETUP.md (Cloudflare deploy from GitHub, APP_KEY secret, install,
   import Bluecoins CSV, MacroDroid, optional Firebase + Anthropic key). Then send real notification texts
   that were read wrongly so the rules can be tuned.
+- Extras added 28 Nov: Categories › Shops (see/forget learned shops); worker AI code split into
+  worker/ai.js with 4 tests of the exact Claude request (17 tests pass in total).
+- No further 3:30am session is scheduled: the build is finished. Next work waits for the user.
 
 ### Open questions
 1. (answered: replace)
