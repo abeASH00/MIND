@@ -269,6 +269,8 @@ export const blobToBase64 = (blob) => new Promise((resolve, reject) => {
 
 // Saves a file: shares it on phones that can, otherwise downloads it.
 export async function saveFile(name, text, type = 'text/csv') {
+  // The demo page is built with this switched on, so it never offers files.
+  if (globalThis.__BELANJA_DEMO_BUILD__) return 'blocked';
   const blob = new Blob([text], { type });
   const file = typeof File === 'function' ? new File([blob], name, { type }) : null;
   try {
