@@ -1,6 +1,6 @@
 # Claude memory: read this first in every new chat
 
-Updated: 2026-11-27 06:45 MYT
+Updated: 2026-11-28 04:00 MYT
 
 ## About the user
 - Not a developer. Wants plain-word steps and complete copy-paste files, not diffs.
@@ -57,9 +57,12 @@ Updated: 2026-11-27 06:45 MYT
   Full plan and design decisions: finance-app/BUILD-PLAN.md. Read that before continuing.
 - WORK WINDOW: user wants the build to run 3:30am–7:00am Malaysia time and stop at 7am. A reminder
   is scheduled for 2026-11-28 03:30 MYT to resume. Commit + push after every file.
-- Build progress (stopped ~06:50 MYT 27 Nov): util.js, calc.js, csv.js (Bluecoins import/export), smart.js
-  (notification reader), seed.js, db.js, store.js, cloud.js, icons.js, ui.js, charts.js done; 13 unit tests pass. Next:
-  all views, index.html/css/manifest/sw, Worker + wrangler, SETUP.md, demo artifact.
+- 28 Nov 3:30–4:00am MYT: FIRST FULL VERSION DONE and pushed (branch ccr-78abda8d-frt4ra, folder finance-app/).
+  All screens, offline install, share target, Cloudflare server, SETUP.md. Demo with example data:
+  https://claude.ai/artifact/16JTfHjTjvdRvQnCYcTcV7 . See finance-app/BUILD-PLAN.md "Status" for details.
+- NEXT for the user: follow finance-app/SETUP.md (Cloudflare deploy from GitHub, APP_KEY secret, install,
+  import Bluecoins CSV, MacroDroid, optional Firebase + Anthropic key). Then send real notification texts
+  that were read wrongly so the rules can be tuned.
 
 ### Open questions
 1. (answered: replace)
@@ -72,3 +75,4 @@ Updated: 2026-11-27 06:45 MYT
 - 2026-11-26: User chose to replace Bluecoins. Plan and phases proposed.
 - 2026-11-26: Built and published phase 1 clickable preview (Belanja).
 - 2026-11-27: Started the full app (core logic modules done). Resume 3:30am 28 Nov.
+- 2026-11-28: Finished the full app v1.0.0 (all screens, server, setup guide, demo).

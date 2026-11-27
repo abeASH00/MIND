@@ -36,47 +36,30 @@ Work window: 3:30am to 7:00am Malaysia time. Commit and push after every finishe
 - Default accounts (from the user's Bluecoins): RHB Bank (bank), CIMB Bank (bank),
   CIMB Petronas Visa-i (credit), Affin Bank (bank), TnG (e-wallet), SETEL (e-wallet), Wallet (cash).
 
-## Files
+## Status (28 Nov 2026, 3:55am): first full version DONE
 
-Done:
-- `app/js/util.js`: money in sen, dates, escaping, hashing, tidyName, seeded random
-- `app/js/csv.js`: CSV read/write, Bluecoins import (tested: transfers paired, splits merged, re-import skipped), exports, backup
-- `app/js/smart.js`: notification reader (tested on 10 Malaysian examples: payments, card charge duplicate, transfer, reload, TAC, promos, statement, salary)
-- `app/js/seed.js`: default categories (with keys + colour slots c1..c8), the user's 7 accounts with aliases/notification apps, example data (270 tx over ~3 months, budgets, repeating rules, inbox), sample receipt
-- `app/js/db.js`: IndexedDB wrapper (stores: accounts, categories, transactions, budgets, recurring, inbox, memory, attachments, kv, outbox, shares) with in-memory fallback; `upgrade()` shared with the service worker
-- `app/js/store.js`: in-memory state + save/soft-delete/purge, settings, selectors, attachments, cloud outbox, merchant learning, repeating rules (auto + remind), import apply/undo, start fresh, example data load/clear, wipe, restore (tested in Node with memory fallback)
-- `app/js/cloud.js`: Firebase 10.12.2 from gstatic (loaded on demand), Google sign-in (popup, redirect fallback), pull/push last-write-wins on updatedAt with an outbox; parseConfig accepts the pasted firebaseConfig block
-- `app/js/icons.js`: original line icons (`icon(name, size)`), ACCOUNT_ICON map
-- `app/js/ui.js`: toast (with undo action), bottom sheets, confirmBox, badges, pickFrom/pickAccount/pickCategory (recent + search), calculator keypad (evalAmount tested), header(), shrinkImage, blobToBase64, saveFile (share or download)
-- `app/js/charts.js`: columns (grouped, rounded tops, hairline grid, legend, slot tooltips), line (area wash, end dot + label, crosshair tooltip, arrow keys), segBar (tall segmented bar with % inside, legend), meter, mountCharts(root). CSS still needs classes: .chart .tip .grid .axis .tick .mark .band .hit .area(10% opacity) .line(2px) .dot(2px surface ring) .cross .endlab .legend .lg .lg-rect .segbar .seg .ink-dark .meter.ok/.near/.over; colour tokens --inc --exp --c0..--c8
-- `tests/core.test.mjs`: 13 passing (`node --test tests/*.test.mjs`)
-- `app/js/calc.js`: periods (payday month start), balances, net worth, category totals, splits,
-  label totals, period series, net worth series, budgets, repeating rules, search filter
+Everything in the original plan is built, tested and pushed:
+- Core logic: `app/js/util.js`, `calc.js`, `csv.js`, `smart.js`, `seed.js`, `db.js`, `store.js`, `cloud.js`, `capture.js`, `app.js`
+- Screen pieces: `ui.js` (sheets, pickers, calculator keypad), `charts.js`, `icons.js`, `main.js` (router, PIN lock, start-up)
+- Screens (`app/js/views/`): home, history, edit (add/edit transaction), inbox, more, accounts, account,
+  reports, budgets, calendar, bills, bill, categories, prefs (settings), data (import/export), receipt, welcome
+- App shell: `app/index.html`, `app/css/app.css`, `app/manifest.webmanifest` (share target), `app/sw.js` (offline), `app/icons/`
+- Server: `worker/index.js` (Durable Object `Inbox`, `/api/notify`, `/api/inbox`, `/api/inbox/ack`, `/api/health`,
+  `/api/ai/notifications`, `/api/ai/receipt`), `wrangler.jsonc`, `package.json` + lockfile
+- Docs: `SETUP.md` (phone guide for the user)
+- Demo: `node tools/build-demo.mjs` -> `dist/demo.html` (gitignored), published at
+  https://claude.ai/artifact/16JTfHjTjvdRvQnCYcTcV7 (republish with the same file path, or pass that url)
 
-To do, in this order:
-1. `app/js/csv.js`: CSV parse/write. Bluecoins import with fuzzy headers (strip "(n)" prefixes),
-   date format detection (YMD/MDY/DMY plus month names), transfer pairing (negative row = from),
-   split grouping by the Split column, opening-balance rows, duplicate skipping via `importKey` hash,
-   and a summary before anything is saved, with Undo by `importBatch`.
-   Export formats: the Bluecoins 14-column advanced template
-   `(1)Type,(2)Date,(3)Item or Payee,(4)Amount,(5)Currency,(6)ConversionRate,(7)Parent Category,(8)Category,(9)Account Type,(10)Account,(11)Notes,(12) Label,(13) Status,(14) Split`,
-   a plain Belanja CSV, and a full JSON backup.
-2. `app/js/smart.js`: notification rules engine. Junk (TAC/OTP, promos, delivery, login alerts),
-   amount regex, direction verbs (Malay too), account from app name, card last-4 digits or aliases,
-   merchant extraction, category from merchant memory and then a keyword map (Malaysian merchants),
-   duplicates (same amount within 10 min), "already recorded" check, confidence, a plain reason
-   sentence, learning, and AI merge.
-7. Views in `app/js/views/`: home, history, edit (transaction form with keypad, autocomplete,
-   splits, labels, attachment, repeat), accounts and account detail (set balance), reports
-   (spending, income, cash flow, net worth, labels), budgets, calendar, bills (repeating rules,
-   due and upcoming), inbox (smart cards, paste text, skipped list), receipt (photo, AI or manual,
-   one entry or split), categories, prefs, data (import/export/backup/restore), more,
-   onboarding, lock (PIN).
-8. `app/index.html`, `app/css/app.css`, `app/manifest.webmanifest` (with share_target POST `./share`),
-   `app/sw.js` (offline cache, saves shared items to the `shares` store), and the icons.
-9. `worker/index.js`, `wrangler.jsonc`, `package.json` (wrangler 4.159.0).
-10. `SETUP.md`: plain-words phone guide covering Cloudflare Git deploy, secrets, Firebase,
-    MacroDroid, installing the app, and importing from Bluecoins.
-11. Bundle a demo with esbuild into one self-contained page and publish it as an artifact
-    (same URL as the preview: claude.ai/artifact/16JTfHjTjvdRvQnCYcTcV7). Check it with
-    Playwright at 400px in light and dark mode.
+## How it was tested
+- `node --test tests/*.test.mjs`: 13 unit tests (money, periods, budgets, repeats, search, CSV, Bluecoins import, notification reader)
+- Playwright against `python3 -m http.server` in `app/`: every screen renders at 400px with no errors;
+  Bluecoins CSV import, add expense with keypad, paste notification, save from inbox, PIN lock, offline reload
+- `npx wrangler dev` with `.dev.vars` APP_KEY: all API routes, MacroDroid-style query params, duplicates, ack,
+  plain-text body, share redirect, and the app's Inbox pulling from the server
+- NOT yet tested with a real Anthropic key (no key in this environment) or a real Cloudflare deploy / Firebase project.
+
+## Ideas for next (ask the user first)
+- Real-world check once the user deploys: MacroDroid message formats from their actual bank apps
+  (tune `smart.js` keyword/regex lists with real samples), and their real Bluecoins export columns.
+- Screen to see/forget "shops Belanja remembers" (merchant memory).
+- Move the app into its own GitHub repo (e.g. abeash00/belanja) instead of the MIND fork.
