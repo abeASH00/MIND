@@ -37,7 +37,7 @@ original chat (the "BUILD THIS APP ALL THE WAY TO DONE" brief).
 - [x] 8. js/tools.js — global rest timer bar (startRest, stopRest, restoreTimer; real-clock endAt in localStorage), renderTool(ctx,name) rest|interval|calc|warmup|cooldown. NOTE: app.js imports restoreTimer from workout.js → workout.js must re-export it from tools.js (or change app.js import).
 - [x] 9. js/settings.js — More tab, Settings (all fields), backup export/import UI, delete-all (double confirm), photo resize helper (pickPhoto, resizeImage(file,max,q,asBlob)), applyTheme, backupAgeDays, doExport.
 - [x] 10. reminders — in settings.js: syncReminderInfo (kv 'reminderInfo' for sw.js), in-app timer, periodicSync if granted, .ics calendar export. sw.js still needs to record lastNotified (it can't write kv yet; uses notification tag).
-- [ ] 11. final offline/empty-data/keyboard pass, then final report to user
+- [x] 11. DONE 2026-11-28 03:30–03:40 MYT: screenshots light+dark, offline test (0 external requests, fonts load), keyboard test, full flow test (superset fixed, swap, resume, finish, XSS, lb, backup round trip, bad file). Final report given; README.md written
       (file list, phone test checklist, deploy steps, security review)
 
 ## Screen convention (app.js provides this ctx)
@@ -58,3 +58,5 @@ icons/, fonts/
 - NEXT: (1) visual polish pass with Playwright screenshots on a phone viewport (light+dark); (2) check keyboard behaviour, empty-data screens, offline (SW) load; (3) tidy poses (one-arm row, hip thrust); (4) sw.js lastNotified; (5) final report to user: file list, phone test checklist, deploy steps (Netlify Drop + GitHub Pages), security/privacy review.
 - Session ended 06:55 MYT (user's 7am stop). Auto-resume scheduled 2026-11-28 03:30 MYT (trigger trig_01EBf7SvYHaSm3RhprSLWw3p).
 - SMOKE TEST PASSED 06:53 MYT: all 15 routes render with zero console errors (Pixel 7 emulation); typed reps + ticked set survive reload.
+
+- 2026-11-28 (chat 1, resumed 03:30 MYT by scheduled task): polish + tests + README. BUILD COMPLETE. MIND's GitHub Pages is used by its docs, so deploy via Netlify (base/publish dir `kuat`) or a new `kuat` repo. Bump sw.js VERSION on every change after deploying.
